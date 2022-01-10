@@ -1,4 +1,4 @@
-## scDagBag: Learning Directed Acyclic Graphs via Bootstrap Aggregation for ScRNA-seq Data
+## DAGBagST: Learning Directed Acyclic Graphs via Bootstrap Aggregation based on Spatial Transcriptomics data
 
 <img src="fig1.png" width="700" align="center">
 
