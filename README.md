@@ -1,8 +1,8 @@
 ## DAGBagST: Learning Directed Acyclic Graphs via Bootstrap Aggregation based on Spatial Transcriptomics data
 
-<img src="fig1.png" width="700" align="center">
+<img src="fig1.pdf" width="700" align="center">
 
-<img src="fig2.png" width="700" align="center">
+<img src="fig2.pdf" width="700" align="center">
 
 - [Overview](#Overview)
 - [Installation](#Installation)
