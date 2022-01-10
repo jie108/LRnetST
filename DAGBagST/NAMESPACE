@@ -1,0 +1,3 @@
+useDynLib(dagbagSC, .registration=TRUE)
+export("hcSC","hcSC_boot","hcSC_boot_parallel","SC_prepare")
+importFrom(Rcpp, evalCpp)
