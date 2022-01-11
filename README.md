@@ -17,11 +17,11 @@
 ```
 This repository contains 2 folders. 
 
-SCdagbag: 
-contains the R package "dagbagSC" for learning directed acycic graphs for mixture of continuous and binary variables
+DAGBagST: 
+contains the R package "DAGBagST" for learning directed acycic graphs based on spatial transcriptomics data.
 
 dagbag: 
-contains the R package "dagbag". The function dagbag::score_shd() is used for aggregating the DAGs learnt from bootstrap resamples
+contains the R package "dagbag". The function dagbag::score_shd() is used for aggregating the DAGs learnt from bootstrap resamples generated from the Neighbor Integrated Matrices (NIM).
 
 ```
 
@@ -33,28 +33,28 @@ contains the R package "dagbag". The function dagbag::score_shd() is used for ag
 ```
 require(doParallel)
 
-install_github("jie108/dagbag/scdagbagM")
+install_github("jie108/DAGBagST/DAGBagST")
 ```
 
 ### Install dagbag
 ```
-install_github("jie108/dagbag/dagbag")
+install_github("jie108/DAGBagST/dagbag")
 ```
 
 
 ## Usage
 
 ```
-dagbagSC
+DAGBagST
 
-hc: A function to learn a DAG model for the given data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
+hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
 
-dagbagSC::hc(Y,nodeType, whiteList, blackList, tol, standardize, maxStep, restart, seed,  verbose)
+DAGBagST::hc(Y,nodeType, whiteList, blackList, tol, standardize, maxStep, restart, seed,  verbose)
 
 
-hc_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given data by the hill climbing algorithm for mixture of continuous and binary variables
+hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables
 
-dagbagSC::hc_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, standardize, tol, restart, seed, nodeShuffle, numThread, verbose)
+DAGBagST::hc_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, standardize, tol, restart, seed, nodeShuffle, numThread, verbose)
 ```
 
 
@@ -69,7 +69,7 @@ score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
 
 ## Arguments
 
-### Arguments for dagbagSC::hcSC and dagbagSC::hcSC_boot_parallel
+### Arguments for dagbagSC::hcSC and DAGBagST::hcSC_boot_parallel
   
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
@@ -105,7 +105,7 @@ score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
 
 ## Value
 
-### Value for dagbagSC::hcSC
+### Value for DAGBagST::hcSC
 
 a list of three components
 
@@ -116,7 +116,7 @@ a list of three components
 | operations  | a matrix recording the selected operation, addition, deletion or reversal of an edge, at each search step
 | deltaMin    | Minimum value of the score change at every step
 
-### Value for dagbagSC::hcSC_boot_parallel
+### Value for DAGBagST::hcSC_boot_parallel
 
 a list of three components
 
@@ -145,11 +145,11 @@ Y.n=example$Y # data matrix
 true.dir=example$true.dir  #adjacency matrix of the data generating DAG
 true.ske=example$true.ske  # skeleton graph of the data generating DAG
 
-temp<- dagbagSC::hcSC(Y=Y.n,nodeType=c(rep("c",p), "b), whiteList=NULL, blackList=NULL, tol = 1e-6, standardize=TRUE, maxStep = 1000, restart=10, seed = 1,  verbose = FALSE)
+temp<- DAGBagST::hcSC(Y=Y.n,nodeType=c(rep("c",p), "b), whiteList=NULL, blackList=NULL, tol = 1e-6, standardize=TRUE, maxStep = 1000, restart=10, seed = 1,  verbose = FALSE)
 
 (ii) DAG learning by hill climbing for mixture of continuous and binary nodes: for bootstrap resamples
 
-temp.boot<- dagbagSC::hcSC_boot_parallel(Y=Y.n, n.boot=10, nodeType=c(rep("c",p),"b), whiteList=NULL, blackList=NULL, standardize=TRUE, tol = 1e-6, maxStep = 1000, restart=10, seed = 1,  nodeShuffle=TRUE, numThread = 2,verbose = FALSE)
+temp.boot<- DAGBagST::hcSC_boot_parallel(Y=Y.n, n.boot=10, nodeType=c(rep("c",p),"b), whiteList=NULL, blackList=NULL, standardize=TRUE, tol = 1e-6, maxStep = 1000, restart=10, seed = 1,  nodeShuffle=TRUE, numThread = 2,verbose = FALSE)
 
 boot.adj=temp.boot$adjacency
 
