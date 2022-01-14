@@ -29,7 +29,7 @@ contains the R package "dagbag". The function dagbag::score_shd() is used for ag
 ## Installation
 
 
-### Install scdagbag
+### Install DAGBagST
 ```
 require(doParallel)
 
