@@ -33,7 +33,7 @@ contains the R package "dagbag". The function dagbag::score_shd() is used for ag
 ## Installation
 
 
-### Install DAGBagST
+### Install LRSTNet
 ```
 require(doParallel)
 
