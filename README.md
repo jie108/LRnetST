@@ -1,4 +1,4 @@
-## LRSTNet: Learning Directed Acyclic Graphs via Bootstrap Aggregation based on Spatial Transcriptomics data
+## LRnetST: Learning Directed Acyclic Graphs via Bootstrap Aggregation based on Spatial Transcriptomics data
 
 <img src="Fig1A_new.png" width="700" align="center">
 
@@ -22,7 +22,7 @@ https://www.biorxiv.org/content/10.1101/2021.08.03.454931v1
 This repository contains 2 folders. 
 
 DAGBagST: 
-contains the R package "LRSTNet" for learning directed acycic graphs based on spatial transcriptomics data.
+contains the R package "LRnetST" for learning directed acycic graphs based on spatial transcriptomics data.
 
 dagbag: 
 contains the R package "dagbag". The function dagbag::score_shd() is used for aggregating the DAGs learnt from bootstrap resamples generated from the Neighbor Integrated Matrices (NIM).
@@ -33,23 +33,23 @@ contains the R package "dagbag". The function dagbag::score_shd() is used for ag
 ## Installation
 
 
-### Install LRSTNet
+### Install LRnetST
 ```
 require(doParallel)
 
-install_github("jie108/LRSTNet/LRSTNet")
+install_github("jie108/LRnetST/LRnetST")
 ```
 
 ### Install dagbag
 ```
-install_github("jie108/LRSTNet/dagbag")
+install_github("jie108/LRnetST/dagbag")
 ```
 
 
 ## Usage
 
 ```
-LRSTNet
+LRnetST
 
 hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
 
@@ -73,7 +73,7 @@ score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
 
 ## Arguments
 
-### Arguments for dagbagSC::hcSC and LRSTNet::hcSC_boot_parallel
+### Arguments for dagbagSC::hcSC and LRnetST::hcSC_boot_parallel
   
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
@@ -109,7 +109,7 @@ score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
 
 ## Value
 
-### Value for LRSTNet::hcSC
+### Value for LRnetST::hcSC
 
 a list of three components
 
