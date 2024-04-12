@@ -53,12 +53,12 @@ LRnetST
 
 hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
 
-DAGBagST::hc(Y,nodeType, whiteList, blackList, tol, standardize, maxStep, restart, seed,  verbose)
+dagbagSC::hcSC(Y,nodeType, whiteList, blackList, tol, standardize, maxStep, restart, seed,  verbose)
 
 
 hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables
 
-DAGBagST::hc_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, standardize, tol, restart, seed, nodeShuffle, numThread, verbose)
+dagbagSC::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, standardize, tol, restart, seed, nodeShuffle, numThread, verbose)
 ```
 
 
@@ -73,7 +73,7 @@ score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
 
 ## Arguments
 
-### Arguments for dagbagSC::hcSC and LRnetST::hcSC_boot_parallel
+### Arguments for dagbagSC::hcSC and dagbagSC::hcSC_boot_parallel
   
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
