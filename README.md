@@ -1,4 +1,4 @@
-## LRnetST: Learning Directed Acyclic Graphs via Bootstrap Aggregation based on Spatial Transcriptomics data
+## LRnetST: Learning Directed Acyclic Graphs for ligands and receptors based on Spatial Transcriptomics data
 
 <img src="Fig1A_new.png" width="700" align="center">
 
