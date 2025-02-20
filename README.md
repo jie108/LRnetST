@@ -21,7 +21,7 @@ https://www.biorxiv.org/content/10.1101/2021.08.03.454931v1
 ```
 This repository contains 2 folders. 
 
-DAGBagST: 
+LRnetST: 
 contains the R package "LRnetST" for learning directed acycic graphs based on spatial transcriptomics data.
 
 dagbag: 
