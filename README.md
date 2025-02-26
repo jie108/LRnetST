@@ -39,13 +39,13 @@ install_github("jie108/LRnetST", subdir="LRnetST")
 ```
 LRnetST
 
-hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
+hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables.
 
 LRnetST::hcSC(Y,nodeType, whiteList, blackList, tol, scale, maxStep, restart, seed,  verbose)
 
-hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables
+hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables.
 
-LRnetST::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, scale, tol, restart, seed, nodeShuffle, numThread, verbose)
+LRnetST::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList,  scale, tol, maxStep, restart, seed, nodeShuffle, bootDensityThre, numThread, verbose)
 
 score_shd: A function to use structural hamming distance to aggregate DAGs. It aggregates an ensemble of DAGs to obtain a DAG that minimizes the overall distance to the ensemble.
 
