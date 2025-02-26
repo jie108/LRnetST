@@ -31,7 +31,7 @@ contains the R package "LRnetST" for learning directed acycic graphs based on sp
 ### Install LRnetST
 ```
 library(devtools)
-install_github("jie108/LRnetST", subdir="LRnetSt")
+install_github("jie108/LRnetST", subdir="LRnetST")
 ```
 
 ## Usage
