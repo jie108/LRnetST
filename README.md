@@ -19,13 +19,8 @@ https://www.biorxiv.org/content/10.1101/2021.08.03.454931v1
 
 ## Overview
 ```
-This repository contains 2 folders. 
-
 LRnetST: 
 contains the R package "LRnetST" for learning directed acycic graphs based on spatial transcriptomics data.
-
-dagbag: 
-contains the R package "dagbag". The function dagbag::score_shd() is used for aggregating the DAGs learnt from bootstrap resamples generated from the Neighbor Integrated Matrices (NIM).
 
 ```
 
@@ -35,16 +30,9 @@ contains the R package "dagbag". The function dagbag::score_shd() is used for ag
 
 ### Install LRnetST
 ```
-require(doParallel)
-
-install_github("jie108/LRnetST/LRnetST")
+library(devtools)
+install_github("jie108/LRnetST", subdir="LRnetSt")
 ```
-
-### Install dagbag
-```
-install_github("jie108/LRnetST/dagbag")
-```
-
 
 ## Usage
 
@@ -53,21 +41,15 @@ LRnetST
 
 hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables
 
-dagbagSC::hcSC(Y,nodeType, whiteList, blackList, tol, standardize, maxStep, restart, seed,  verbose)
-
+LRnetST::hcSC(Y,nodeType, whiteList, blackList, tol, scale, maxStep, restart, seed,  verbose)
 
 hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables
 
-dagbagSC::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, standardize, tol, restart, seed, nodeShuffle, numThread, verbose)
-```
-
-
-```
-dagbag
+LRnetST::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList, maxStep, scale, tol, restart, seed, nodeShuffle, numThread, verbose)
 
 score_shd: A function to use structural hamming distance to aggregate DAGs. It aggregates an ensemble of DAGs to obtain a DAG that minimizes the overall distance to the ensemble.
 
-score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, print)
+LRnetST::score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, verbose)
 ```
 
 
