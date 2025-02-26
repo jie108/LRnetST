@@ -60,17 +60,18 @@ LRnetST::score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, v
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
 | Y	       |	           | an n by p data matrix: n – sample size, p – number of variables
-| n.boot (only for hc_boot_parallel) |      0       | an integer: the number of bootstrap resamples of the data matrix Y
-| node.type  		       |         | a vector of length equal to the number of variables specifying the type of variable/node type: "c" for continuous and "b" for binary
-| maxStep		           | 500    |an integer: the maximum number of search steps of the hill climbing algorithm
-| scale |  TRUE | logical: whether to scale the continuous nodes such l2_norm^2/n=1 (won't change zero pattern)
-| nodeShuffle (ony for hc_boot_parallel) | FALSE | logical: whether to shuffle the order of the variables before DAG learning
-| restart | 0 | an integer: number of times to restart the search algorithm after a local optimal is achieved. The purpose is to search for global optimal
+| n.boot (only for hc_boot_parallel) |      1       | an integer: the number of bootstrap resamples of the data matrix Y
+| node.type  		       |   NULL      | a vector of length equal to the number of variables specifying the type of variable/node type: "c" for continuous and "b" for binary
 | blacklist	         | NULL    | a p by p 0-1 matrix: if the (i,j)th-entry is "1", then the edge i–>j will be excluded from the DAG during the search
 | whitelist          | NULL   |  a p by p 0-1 matrix: if the (i,j)th-entry is "1", then the edge i–>j will always be included in the DAG during the search
+| scale |  TRUE | logical: whether to scale the continuous nodes such l2_norm^2/n=1 (won't change zero pattern)
 | tol     |     1e-06     | a scalar: a number to indicate a threshold below which values will be treated as zero
-| numThread (only for hcSC_boot_parallel) |  |  an integer for running parallel computation of DAG learning from bootstrap resamples
-|bootDensityThre (only for hcSC_boot_parallel)| proportion of zeros to be sampled in the bootstrap resamples
+| maxStep		           | 2000    |an integer: the maximum number of search steps of the hill climbing algorithm
+| restart | 10 | an integer: number of times to restart the search algorithm after a local optimal is achieved. The purpose is to search for global optimal
+|seed| 1 | an integer: seed used for bootstrap restart and bootstrap resampling
+| nodeShuffle (ony for hc_boot_parallel) | FALSE | logical: whether to shuffle the order of the variables before DAG learning
+|bootDensityThre (only for hcSC_boot_parallel)| 0.1| numeric between (0,1): lower cutoff of columnwise nonzero-entry rate in bootstrap resamples
+| numThread (only for hcSC_boot_parallel) | 2 |  an integer for running parallel computation of DAG learning from bootstrap resamples
 | verbose		     | FALSE   | logical: whether print the step information
 
 
