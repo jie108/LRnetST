@@ -37,8 +37,6 @@ install_github("jie108/LRnetST", subdir="LRnetST")
 ## Usage
 
 ```
-LRnetST
-
 hcSC: A function to learn a DAG model for the given ST data with no bootstrap resamples by the hill climbing algorithm for mixture of continuous and binary variables.
 
 LRnetST::hcSC(Y,nodeType, whiteList, blackList, tol, scale, maxStep, restart, seed,  verbose)
