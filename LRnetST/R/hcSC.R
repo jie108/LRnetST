@@ -1,7 +1,7 @@
 hcSC <- function(Y, nodeType=NULL, whiteList=NULL, blackList=NULL, scale=TRUE, tol = 1e-6, maxStep = 2000L, restart=10L, seed = 1L, verbose = FALSE) {
 ##Y: n by p data matrix;  nodeType: n-string: either "c" or "b";
 ##whiteList: p by p logical matrix of whitelisted edges; blackList: p by p logical matrix of blacklisted edges;
-##scale: whether to scale the continous nodes such l2_norm^2/n=1 (won't change zero pattern)
+##scale: whether to scale the continuous nodes such l2_norm^2/n=1 (won't change zero pattern)
 ##tol: double, lower cutoff of score improvement for HC algorithm; maxStep:integer, maximum number of search steps of HC algorithm; restart: integer, # of times to perform HC search (to break score ties)
 ##seed: integer, random number generator seed for breaking score tie;
 ##return: HC learned adjacency matrix on Y
