@@ -7,6 +7,8 @@ hcSC <- function(Y, nodeType=NULL, whiteList=NULL, blackList=NULL, scale=TRUE, t
 ##return: HC learned adjacency matrix on Y
 
 	p=ncol(Y)
+  n=nrow(Y)
+
 	if(is.null(whiteList)){
 		whiteList=matrix(FALSE, p,p)
 
@@ -191,7 +193,7 @@ hcSC_boot_parallel<-function(Y, n.boot=1, nodeType=NULL,  whiteList=NULL, blackL
    ## hc on bootstrap resamples  
    cl <- makeCluster(numThread)
    registerDoParallel(cl)  
-   result<-foreach(i=1:n.boot, .combine="list",.multicombine = TRUE, .maxcombine = n.boot, .packages=c("dagbagSC")) %dopar%{
+   result<-foreach(i=1:n.boot, .combine="list",.multicombine = TRUE, .maxcombine = n.boot, .packages=c("LRnetST")) %dopar%{
   
      set.seed(i*1001+seed)
      Y.pick = boot_dense(Y, bootDensityThre) ##bootstrap resample with each column having at least bootDensityThre percentage of nozero entries

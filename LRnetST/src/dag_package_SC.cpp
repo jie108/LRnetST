@@ -27,6 +27,7 @@ typedef Eigen::Map<Eigen::VectorXd> MapVec;
 
 
 //check whether an edge is on a loop  in a graph; note: this function can also check whether adding a new edge to the graph will result in a loop/cycle. (loop version)
+//[[Rcpp::export]]
 bool edgeOnLoop(int fromNode, int toNode, const Rcpp::List& parSet){
   //inputs: fromNode: index of the parent node in the edge under testing; toNode: index of the child node in the edge under testing
   //parSet: list of parent nodes for each node in the graph 
