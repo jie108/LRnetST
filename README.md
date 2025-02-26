@@ -64,13 +64,13 @@ LRnetST::score_shd(boot.adj, alpha, threshold, max.step, blacklist, whitelist, v
 | node.type  		       |         | a vector of length equal to the number of variables specifying the type of variable/node type: "c" for continuous and "b" for binary
 | maxStep		           | 500    |an integer: the maximum number of search steps of the hill climbing algorithm
 | scale |  TRUE | logical: whether to scale the continuous nodes such l2_norm^2/n=1 (won't change zero pattern)
-| nodeShuffle (hc_boot_parallel) | FALSE | logical: whether to shuffle the order of the variables before DAG learning
+| nodeShuffle (ony for hc_boot_parallel) | FALSE | logical: whether to shuffle the order of the variables before DAG learning
 | restart | 0 | an integer: number of times to restart the search algorithm after a local optimal is achieved. The purpose is to search for global optimal
 | blacklist	         | NULL    | a p by p 0-1 matrix: if the (i,j)th-entry is "1", then the edge i–>j will be excluded from the DAG during the search
 | whitelist          | NULL   |  a p by p 0-1 matrix: if the (i,j)th-entry is "1", then the edge i–>j will always be included in the DAG during the search
 | tol     |     1e-06     | a scalar: a number to indicate a threshold below which values will be treated as zero
 | numThread (only for hcSC_boot_parallel) |  |  an integer for running parallel computation of DAG learning from bootstrap resamples
-|bootDensityThre| proportion of zeros to be sampled in the bootstrap resamples
+|bootDensityThre (only for hcSC_boot_parallel)| proportion of zeros to be sampled in the bootstrap resamples
 | verbose		     | FALSE   | logical: whether print the step information
 
 
