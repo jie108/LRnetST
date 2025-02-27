@@ -67,7 +67,7 @@ LRnetST::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step,ve
 | maxStep		           | 2000    |an integer: the maximum number of search steps of the hill climbing algorithm
 | restart | 10 | an integer: number of times to restart the search algorithm after a local optimal is achieved. The purpose is to search for global optimal
 |seed| 1 | an integer: seed used for bootstrap restart and bootstrap resampling
-| nodeShuffle (ony for hc_boot_parallel) | TRUE | logical: whether to shuffle the order of the variables before DAG learning
+| nodeShuffle (ony for hc_boot_parallel) | FALSE | logical: whether to shuffle the order of the variables before DAG learning
 |bootDensityThre (only for hcSC_boot_parallel)| 0.1| numeric between (0,1): lower cutoff of columnwise nonzero-entry rate in bootstrap resamples
 | numThread (only for hcSC_boot_parallel) | 2 |  an integer for running parallel computation of DAG learning from bootstrap resamples
 | verbose		     | FALSE   | logical: whether print the step information
