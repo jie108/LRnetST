@@ -38,9 +38,11 @@ hcSC: A function to learn a DAG model for the given ST data with no bootstrap re
 
 LRnetST::hcSC(Y,nodeType, whiteList, blackList, scale, tol, maxStep, restart, seed,  verbose)
 
+
 hcSC_boot_parallel: A function to learn a DAG model for every bootstrap resmples of the given ST data by the hill climbing algorithm for mixture of continuous and binary variables.
 
 LRnetST::hcSC_boot_parallel(Y, node.type, n.boot, whiteList, blackList,  scale, tol, maxStep, restart, seed, nodeShuffle, bootDensityThre, numThread, verbose)
+
 
 score_shd: A function to use structural hamming distance to aggregate DAGs. It aggregates an ensemble of DAGs to obtain a DAG that minimizes the overall distance to the ensemble.
 
@@ -121,6 +123,7 @@ data(example)
 Y.n=example$Y # data matrix
 p<- dim(Y.n)[2] # no. of nodes
 true.dir=example$true.dir  #adjacency matrix of the data generating DAG
+
 temp<- LRnetST::hcSC(Y=Y.n,nodeType=rep("c",p), whiteList=NULL, blackList=NULL,  scale=TRUE, maxStep = 1000, tol = 1e-6,restart=10, seed = 1,  verbose = FALSE)
 adj.temp=temp$adjacency
 
