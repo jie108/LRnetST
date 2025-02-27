@@ -50,7 +50,7 @@ LRnetST::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step,ve
 
 ## Arguments
 
-### Arguments for LRnetST::hcSC and LRnetSt::hcSC_boot_parallel
+### Arguments for LRnetST::hcSC and LRnetST::hcSC_boot_parallel
   
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
@@ -71,7 +71,7 @@ LRnetST::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step,ve
 
 
 
-### Arguments for LRnetSt::score_shd
+### Arguments for LRnetST::score_shd
   
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
