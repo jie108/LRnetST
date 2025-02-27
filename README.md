@@ -26,9 +26,6 @@ contains the R package "LRnetST" for learning directed acycic graphs based on sp
 
 
 ## Installation
-
-
-### Install LRnetST
 ```
 library(devtools)
 install_github("jie108/LRnetST", subdir="LRnetST")
