@@ -5,7 +5,7 @@
 ## max.step: maximum number of steps for hill climbing algorithm -- this is a legacy parameter and has no effect now
 ## blacklist, whitelist: p by p boolean matrices
 ## return: a p by p aggregated DAG: edge i->j in the DAG iff (i,j) element =1;
-score_shd <- function(boot.adj, alpha = 1, threshold = 0, max.step = NULL, blacklist = NULL, whitelist = NULL, verbose = FALSE){
+score_shd <- function(boot.adj, alpha = 1, threshold = 0,  whitelist = NULL,  blacklist = NULL,max.step = NULL,verbose = FALSE){
 
  ##
  p = dim(boot.adj)[1]     ## number of variables
