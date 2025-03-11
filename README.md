@@ -14,10 +14,11 @@
 - [Contributions](#contributions)
 
 ## Reference 
---
+
 Shrabanti Chowdhury, Sammy Ferri-Borgogno, Peng Yang, Wenyi Wang, Jie Peng, Samuel C Mok, Pei Wang. 
 Learning directed acyclic graphs for ligands and receptors based on spatially resolved transcriptomic data of ovarian cancer. 
-Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, bbaf085, https://doi.org/10.1093/bib/bbaf085
+Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, https://doi.org/10.1093/bib/bbaf085
+
 ## Overview
 ```
 LRnetST: 
