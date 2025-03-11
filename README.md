@@ -15,8 +15,7 @@
 
 ## Reference 
 --
-https://www.biorxiv.org/content/10.1101/2021.08.03.454931v3
-
+https://academic.oup.com/bib/article/26/2/bbaf085/8068117
 ## Overview
 ```
 LRnetST: 
