@@ -139,31 +139,31 @@ adj.temp=temp$adjacency
 
 library(foreach)
 library(doParallel)
-boot.adj<- LRnetST::hcSC_boot_parallel(Y=Y.n, n.boot=10, nodeType=rep("c",p), whiteList=NULL, blackList=NULL, scale=TRUE, tol = 1e-6, maxStep = 1000, restart=10, seed = 1,  nodeShuffle=TRUE, numThread = 2,verbose = FALSE)
+boot.adj<- LRnetST::hcSC_boot_parallel(Y=Y.n, n.boot=50, nodeType=rep("c",p), whiteList=NULL, blackList=NULL, scale=TRUE, tol = 1e-6, maxStep = 1000, restart=10, seed = 1,  nodeShuffle=TRUE, numThread = 2,verbose = FALSE)
 
 #(iii) Bootstrap aggregation of DAGs learnt from bootstrap resamples
 adj.bag=LRnetST::score_shd(boot.adj, alpha = 1, threshold=0)
 
 #(iv) Evaluations
 ## results on DAG estimation
-sum(adj.bag==1&true.dir==0)/sum(adj.bag==1) ## FDR: 0.4324324
-sum(adj.bag==1&true.dir==1)/sum(true.dir==1) ## Power: 0.5779817
+sum(adj.bag==1&true.dir==0)/sum(adj.bag==1) ## FDR: 0.4339623
+sum(adj.bag==1&true.dir==1)/sum(true.dir==1) ## Power: 0.5504587
 
 ## results on moral graph estimation
 adj.bag.moral=moral_graph(adj.bag)
-sum(adj.bag.moral==1&true.moral==0)/sum(adj.bag.moral==1) ## FDR: 0.2215569
-sum(adj.bag.moral==1&true.moral==1)/sum(true.moral==1) ## Power: 0.7065217
+sum(adj.bag.moral==1&true.moral==0)/sum(adj.bag.moral==1) ## FDR: 0.21875
+sum(adj.bag.moral==1&true.moral==1)/sum(true.moral==1) ## Power: 0.6793478
 
 ## results on skeleton graph estimation
 adj.bag.ske=skeleton(adj.bag)
-sum(adj.bag.ske==1&true.ske==0)/sum(adj.bag.ske==1) ## FDR: 0.1801802
-sum(adj.bag.ske==1&true.ske==1)/sum(true.ske==1) ## Power: 0.8348624
+sum(adj.bag.ske==1&true.ske==0)/sum(adj.bag.ske==1) ## FDR:  0.1320755
+sum(adj.bag.ske==1&true.ske==1)/sum(true.ske==1) ## Power: 0.8440367
 
 ## results on vstructures estimation
 adj.bag.vstr=vstructures(adj.bag)
 vstr.corr=compare.vstructures(target.vstructures=adj.bag.vstr, true.vstructures=true.vstr)
-1-nrow(vstr.corr)/nrow(adj.bag.vstr) ## FDR: 0.375
-nrow(vstr.corr)/nrow(true.vstr) ## power: 0.4545455
+1-nrow(vstr.corr)/nrow(adj.bag.vstr) ## FDR: 0.4074074
+nrow(vstr.corr)/nrow(true.vstr) ## power: 0.4155844
 ```
 
 
