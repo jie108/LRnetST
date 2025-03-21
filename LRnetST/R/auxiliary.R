@@ -1,6 +1,6 @@
 ######## auxiliary functions
 cal_order<- function(adj_matrix){
-### What: calculate topological order of nodes in directed acyclic graph
+### What: get topological order of nodes in directed acyclic graph
 ### inputs: 
 ## adj_matrix: a pxp adjacency matrix: adj_matrix[i,j] indicates the presence (1) or absence (0) of edge i--->j
 ### outputs:
