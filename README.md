@@ -163,7 +163,7 @@ sum(adj.bag.ske==1&true.ske==1)/sum(true.ske==1) ## Power: 0.8440367
 adj.bag.vstr=vstructures(adj.bag)
 vstr.corr=compare.vstructures(target.vstructures=adj.bag.vstr, true.vstructures=true.vstr)
 1-nrow(vstr.corr)/nrow(adj.bag.vstr) ## FDR: 0.4074074
-nrow(vstr.corr)/nrow(true.vstr) ## power: 0.4155844
+nrow(vstr.corr)/nrow(true.vstr) ## Power: 0.4155844
 ```
 
 
