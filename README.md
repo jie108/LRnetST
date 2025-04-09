@@ -32,7 +32,11 @@ contains the R package "LRnetST" for learning directed acycic graphs based on sp
 library(devtools)
 install_github("jie108/LRnetST", subdir="LRnetST")
 ```
-
+or alternatively 
+```
+install.packages("remotes")
+remotes::install_github("jie108/dagbagM",subdir="dagbagM")
+```
 ## Usage
 
 ```
