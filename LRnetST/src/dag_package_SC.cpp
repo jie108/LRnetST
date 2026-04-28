@@ -664,6 +664,9 @@ void updateGraph(const Rcpp::IntegerVector curOper, const Rcpp::NumericVector sc
 //if flip&&|delta_c-deltaMin|<=tol, then return true with 50% probability;
 //if delta_c>deltaMin+tol: return false (no subsequent update of current best operation);  
 bool deltaComp(double delta_c, double deltaMin, double tol, bool flip = true){
+  if(!std::isfinite(delta_c)){ // finite guard 
+    return false;
+  }
  if(delta_c<deltaMin-tol){
   return true;
  }else if(delta_c>deltaMin+tol){
