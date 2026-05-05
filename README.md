@@ -1,4 +1,4 @@
-## LRnetSTv2: Learning Directed Acyclic Graphs for Ligands and Receptors based on Spatial Transcriptomics Data
+## LRnetST: Learning Directed Acyclic Graphs for Ligands and Receptors based on Spatial Transcriptomics Data
 
 <img src="Fig1A_new.png" width="700" align="center">
 
@@ -6,6 +6,7 @@
 
 - [Reference](#Reference)
 - [Overview](#Overview)
+- [Major update disclosure](#major-update-disclosure)
 - [Installation](#Installation)
 - [Usage](#Usage)
 - [Arguments](#Arguments)
@@ -21,20 +22,54 @@ Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, https://doi.org/10.
 
 ## Overview
 
-LRnetSTv2 is an improved implementation of LRnetST for learning directed acyclic graphs (DAGs) from spatial transcriptomics (ST) data. The data contain mixed continuous (log-transformed count) and binary (on/off indicator) nodes, with zero-inflation modelled explicitly via paired node structures. For a detailed account of the C++ and R-layer changes relative to LRnetST, see the implementation notes (`LRnetSTv2_implementation_notes.md`).
+LRnetST learns directed acyclic graphs (DAGs) from spatial transcriptomics (ST) data. The data contain mixed continuous (log-transformed count) and binary (on/off indicator) nodes, with zero-inflation modelled explicitly via paired node structures.
+
+## Major update disclosure
+
+This release is a major update with bug fixes, efficiency improvements, and
+package interface changes.
+
+Main user interface changes:
+
+- `hcSC_boot` now unifies sequential and parallel bootstrap fitting through the `future` framework.
+- `hcSC_boot` adds `backend`, `workers`, and `output_type` arguments. Use `backend = "sequential"` for one-by-one fitting and `backend = "future"` for parallel fitting. Use `output_type = "array"`, `"freq"`, or `"both"` to choose the returned bootstrap output.
+- `score_shd` continues to aggregate bootstrap adjacency arrays.
+- `score_shd_freq` is a new function for aggregating edge-frequency outputs from `hcSC_boot(..., output_type = "freq")`.
+- `score_shd`: Argument names changed from `whitelist` and `blacklist` to `whiteList` and `blackList`.
+- `score_shd`: The frequency threshold argument changed from `threshold` to `freq.cutoff`.
 
 ## Installation
 
+To prevent lazy loading of a previously installed version and avoid accidentally
+using the old package, first remove any existing `LRnetST` installation, quit R,
+restart a fresh R session, and then install the package:
+
+```r
+if ("LRnetST" %in% rownames(installed.packages())) {
+  remove.packages("LRnetST")
+}
+q()
+```
+
+After restarting R:
+
 ```r
 library(devtools)
-install_github("jie108/LRnetST", subdir="LRnetSTv2")
+install_github("jie108/LRnetST", subdir="LRnetST")
 ```
 
 or alternatively
 
 ```r
 install.packages("remotes")
-remotes::install_github("jie108/LRnetST", subdir="LRnetSTv2")
+remotes::install_github("jie108/LRnetST", subdir="LRnetST")
+```
+
+After installation, check the installed version and confirm that the correct
+package version `2.1` is loaded:
+
+```r
+packageVersion("LRnetST")
 ```
 
 ## Usage
@@ -43,19 +78,19 @@ remotes::install_github("jie108/LRnetST", subdir="LRnetSTv2")
 SC_prepare: Prepare a log-count ST matrix for hcSC / hcSC_boot by creating paired
   (logCount, indicator) node structure with whitelisted indicator → logcount edges.
 
-LRnetSTv2::SC_prepare(logCount)
+LRnetST::SC_prepare(logCount)
 
 
 hcSC: Learn a DAG from ST data (no bootstrap) by hill climbing for mixtures of
   continuous and binary variables.
 
-LRnetSTv2::hcSC(Y, nodeType, whiteList, blackList, scale, tol, maxStep, restart, seed, verbose)
+LRnetST::hcSC(Y, nodeType, whiteList, blackList, scale, tol, maxStep, restart, seed, verbose)
 
 
 hcSC_boot: Learn a DAG from each bootstrap resample of the ST data; supports
   parallel execution via the future backend.
 
-LRnetSTv2::hcSC_boot(Y, n.boot, nodeType, whiteList, blackList, scale, tol, maxStep,
+LRnetST::hcSC_boot(Y, n.boot, nodeType, whiteList, blackList, scale, tol, maxStep,
                      restart, seed, nodeShuffle, bootDensityThre,
                      backend, workers, verbose, output_type)
 
@@ -63,13 +98,13 @@ LRnetSTv2::hcSC_boot(Y, n.boot, nodeType, whiteList, blackList, scale, tol, maxS
 score_shd: Aggregate a 3D bootstrap array of DAGs by minimising generalised structural
   Hamming distance (gSHD).
 
-LRnetSTv2::score_shd(boot.adj, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
+LRnetST::score_shd(boot.adj, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
 
 
 score_shd_freq: Aggregate a bootstrap frequency matrix by minimising gSHD.
   Pairs with hcSC_boot(output_type = "freq") to avoid storing the full 3D array.
 
-LRnetSTv2::score_shd_freq(freq, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
+LRnetST::score_shd_freq(freq, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
 ```
 
 ## Arguments
@@ -158,7 +193,7 @@ A p by p 0/1 integer matrix: the adjacency matrix of the aggregated DAG.
 
 ```r
 rm(list=ls())
-library(LRnetSTv2)
+library(LRnetST)
 data(example)
 
 Y.n      <- example$Y        # 102 × 102 log-count matrix
@@ -167,7 +202,7 @@ p <- ncol(Y.n)   # 102
 n <- nrow(Y.n)   # 102
 
 # (i) Single-run DAG learning
-res <- LRnetSTv2::hcSC(
+res <- LRnetST::hcSC(
   Y       = Y.n,
   nodeType = rep("c", p),
   scale   = TRUE, maxStep = 1000, tol = 1e-6,
@@ -181,14 +216,14 @@ sum(adj.single == 1 & true.dir == 0) / sum(adj.single == 1)   # FDR:  0.8803681
 sum(adj.single == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.3577982
 
 ## Skeleton
-true.ske    <- LRnetSTv2::skeleton(true.dir)
-adj.single.ske <- LRnetSTv2::skeleton(adj.single)
+true.ske    <- LRnetST::skeleton(true.dir)
+adj.single.ske <- LRnetST::skeleton(adj.single)
 sum(adj.single.ske == 1 & true.ske == 0) / sum(adj.single.ske == 1)  # FDR: 0.7055215  
 sum(adj.single.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8807339
 
 
 # (ii) Bootstrap DAG learning (sequential; use backend = "future" for parallel)
-boot.adj <- LRnetSTv2::hcSC_boot(
+boot.adj <- LRnetST::hcSC_boot(
   Y       = Y.n, n.boot = 100,
   nodeType = rep("c", p),
   scale   = TRUE, tol = 1e-6, maxStep = 1000,
@@ -200,7 +235,7 @@ boot.adj <- LRnetSTv2::hcSC_boot(
 )
 
 # (iii) Bootstrap aggregation
-adj.bag <- LRnetSTv2::score_shd(boot.adj, alpha = 1, freq.cutoff = 0.5)
+adj.bag <- LRnetST::score_shd(boot.adj, alpha = 1, freq.cutoff = 0.5)
 
 # (iv) Evaluation
 ## DAG
@@ -208,21 +243,21 @@ sum(adj.bag == 1 & true.dir == 0) / sum(adj.bag == 1)   # FDR:    0.3557692
 sum(adj.bag == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.6146789
 
 ## Skeleton
-true.ske    <- LRnetSTv2::skeleton(true.dir)
-adj.bag.ske <- LRnetSTv2::skeleton(adj.bag)
+true.ske    <- LRnetST::skeleton(true.dir)
+adj.bag.ske <- LRnetST::skeleton(adj.bag)
 sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.1346154
 sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8256881
 
 ## Moral graph
-true.moral    <- LRnetSTv2::moral_graph(true.dir)
-adj.bag.moral <- LRnetSTv2::moral_graph(adj.bag)
+true.moral    <- LRnetST::moral_graph(true.dir)
+adj.bag.moral <- LRnetST::moral_graph(adj.bag)
 sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.1666667
 sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.7065217
 
 ## V-structures
-true.vstr    <- LRnetSTv2::vstructures(true.dir)
-adj.bag.vstr <- LRnetSTv2::vstructures(adj.bag)
-vstr.corr    <- LRnetSTv2::compare.vstructures(adj.bag.vstr, true.vstr)
+true.vstr    <- LRnetST::vstructures(true.dir)
+adj.bag.vstr <- LRnetST::vstructures(adj.bag)
+vstr.corr    <- LRnetST::compare.vstructures(adj.bag.vstr, true.vstr)
 1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.3076923
 nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.4675325
 ```
@@ -238,7 +273,7 @@ edge for every gene j.
 
 ```r
 rm(list=ls())
-library(LRnetSTv2)
+library(LRnetST)
 data(example)
 
 Y.n      <- example$Y        # 102 × 102 log-count matrix (no zeros)
@@ -271,7 +306,7 @@ for (j in seq_len(p)) true.dir.2p[p+j, j] <- 1L  # U_j -> Z_j (102 edges)
 # total: 211 true edges
 
 # (iv) Bootstrap DAG learning
-boot.sc <- LRnetSTv2::hcSC_boot(
+boot.sc <- LRnetST::hcSC_boot(
   Y               = Y.sc, n.boot = 100,
   nodeType        = node.type,
   whiteList       = whiteList, blackList = blackList,
@@ -283,7 +318,7 @@ boot.sc <- LRnetSTv2::hcSC_boot(
 )
 
 # (v) Bootstrap aggregation
-adj.bag.2p <- LRnetSTv2::score_shd(boot.sc, alpha = 1, freq.cutoff = 0.5,
+adj.bag.2p <- LRnetST::score_shd(boot.sc, alpha = 1, freq.cutoff = 0.5,
                                     whiteList = whiteList, blackList=blackList)
 
 # (vi) Evaluation on the full 2p × 2p model
@@ -292,21 +327,21 @@ sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2470
 sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6066351
 
 ## Skeleton
-true.ske.2p    <- LRnetSTv2::skeleton(true.dir.2p)
-adj.bag.ske.2p <- LRnetSTv2::skeleton(adj.bag.2p)
+true.ske.2p    <- LRnetST::skeleton(true.dir.2p)
+adj.bag.ske.2p <- LRnetST::skeleton(adj.bag.2p)
 sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.08235294
 sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7393365
 
 ## Moral graph
-true.moral.2p    <- LRnetSTv2::moral_graph(true.dir.2p)
-adj.bag.moral.2p <- LRnetSTv2::moral_graph(adj.bag.2p)
+true.moral.2p    <- LRnetST::moral_graph(true.dir.2p)
+adj.bag.moral.2p <- LRnetST::moral_graph(adj.bag.2p)
 sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.2336066
 sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4734177
 
 ## V-structures
-true.vstr.2p    <- LRnetSTv2::vstructures(true.dir.2p)  # 186 true v-structures
-adj.bag.vstr.2p <- LRnetSTv2::vstructures(adj.bag.2p)
-vstr.corr.2p    <- LRnetSTv2::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
+true.vstr.2p    <- LRnetST::vstructures(true.dir.2p)  # 186 true v-structures
+adj.bag.vstr.2p <- LRnetST::vstructures(adj.bag.2p)
+vstr.corr.2p    <- LRnetST::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
 1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5945946
 nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1612903
 ```

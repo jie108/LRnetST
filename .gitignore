@@ -1,4 +1,4 @@
-LRnetST/
+LRnetSTv2/
 LRnet-test.R
 LRnetSTv2_implementation_notes.md
 dagbagMv2_implementation_notes.md
@@ -6,6 +6,6 @@ dagbagMv2_implementation_notes.md
 *.RData
 *.csv
 /*.R
-LRnetSTv2/src/*.o
-LRnetSTv2/src/*.so
-LRnetSTv2/..Rcheck/
+LRnetST/src/*.o
+LRnetST/src/*.so
+LRnetST.Rcheck/

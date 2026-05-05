@@ -1,4 +1,0 @@
-useDynLib(LRnetSTv2, .registration=TRUE)
-export("hcSC", "hcSC_boot", "SC_prepare", "score_shd", "score_shd_freq",
-       "cal_order", "moral_graph", "vstructures", "skeleton", "compare.vstructures")
-importFrom(Rcpp, evalCpp)

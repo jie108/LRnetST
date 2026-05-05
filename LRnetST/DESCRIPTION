@@ -1,0 +1,15 @@
+Package: LRnetST
+Type: Package
+Title: LRnetST
+Version: 2.1
+Date: 2026-05-04
+Author: Jie Peng
+Maintainer: Jie Peng <jiepeng@ucdavis.edu>
+Description: Package for learning directed acyclic graphs from spatial
+    transcriptomics data (zero-inflated mixed continuous/binary nodes), with
+    improved score caching, acyclicity cache correctness fixes, and future-based
+    parallel bootstrap aggregation.
+License: GPL (>= 2)
+Imports: Rcpp (>= 1.0.4)
+Suggests: future, testthat
+LinkingTo: Rcpp, RcppEigen, RcppNumerical
