@@ -546,7 +546,7 @@ Rcpp::List fastLR2_(const Rcpp::NumericMatrix& x, const Rcpp::NumericVector& y,
 
 
 //calculate bic score given design matrix x, response vector y and response type ("c" or "b"); 
-//for "c" nodes, fit OLS only one samples with indRow=1
+//for "c" nodes, fit OLS only on samples with indRow=1
 double bicScoreSC(const Rcpp::NumericMatrix& x, const Rcpp::NumericVector& y, Rcpp::String nodeType, const Rcpp::LogicalVector& indRow){
   int p=x.ncol(), n=y.size();
   Rcpp::List res;
