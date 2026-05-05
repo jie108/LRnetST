@@ -1,1 +1,6 @@
 LRnetST/
+LRnet-test.R
+LRnetSTv2_implementation_notes.md
+*.RData
+*.csv
+/*.R
