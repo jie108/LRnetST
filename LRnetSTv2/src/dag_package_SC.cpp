@@ -382,7 +382,172 @@ void acyclic_cache_update(const LastOpState& last,
   }
 }
 
+// ---- Score aggregation helpers (for score_shd_cpp / score_shd_freq_cpp) ----
+
+inline bool has_edge(const std::vector<unsigned char>& g, int from, int to, int p) {
+  return g[from + to * p] != 0;
+}
+inline void set_edge(std::vector<unsigned char>& g, int from, int to, int p, bool v) {
+  g[from + to * p] = v ? 1 : 0;
+}
+
+std::vector<unsigned char> logical_to_uc(const Rcpp::LogicalMatrix& x, const char* name) {
+  const int p = x.nrow();
+  if (x.ncol() != p) Rcpp::stop("%s must be square", name);
+  std::vector<unsigned char> out(p * p, 0);
+  for (int to = 0; to < p; ++to)
+    for (int from = 0; from < p; ++from) {
+      const int val = x(from, to);
+      if (val == NA_LOGICAL) Rcpp::stop("%s must not contain NA values", name);
+      out[from + to * p] = val ? 1 : 0;
+    }
+  return out;
+}
+
+AdjList parents_from_uc(const std::vector<unsigned char>& g, int p) {
+  AdjList par(p);
+  for (int to = 0; to < p; ++to)
+    for (int from = 0; from < p; ++from)
+      if (has_edge(g, from, to, p)) par[to].push_back(from);
+  return par;
+}
+
+bool is_dag_uc(const std::vector<unsigned char>& g, int p) {
+  AdjList par = parents_from_uc(g, p);
+  for (int from = 0; from < p; ++from)
+    for (int to = 0; to < p; ++to)
+      if (has_edge(g, from, to, p) && edge_on_loop_cpp(from, to, par))
+        return false;
+  return true;
+}
+
+Rcpp::IntegerMatrix wrap_int_graph(const std::vector<unsigned char>& g, int p) {
+  Rcpp::IntegerMatrix out(p, p);
+  for (int to = 0; to < p; ++to)
+    for (int from = 0; from < p; ++from)
+      out(from, to) = has_edge(g, from, to, p) ? 1 : 0;
+  return out;
+}
+
+struct EdgeCandidate { int from, to; double sf, gsf; };
+
+Rcpp::IntegerMatrix aggregate_freq(const Rcpp::NumericMatrix& seleFreq,
+                                   double alpha, double freqCutoff,
+                                   const Rcpp::LogicalMatrix& whiteList,
+                                   const Rcpp::LogicalMatrix& blackList,
+                                   bool verbose) {
+  const int p = seleFreq.nrow();
+  if (seleFreq.ncol() != p)  Rcpp::stop("freq must be a square matrix");
+  if (p > 46000)             Rcpp::stop("p exceeds safe index limit (46000)");
+  if (whiteList.nrow() != p || whiteList.ncol() != p ||
+      blackList.nrow() != p || blackList.ncol() != p)
+    Rcpp::stop("whiteList and blackList must be p by p matrices");
+  if (!std::isfinite(alpha) || alpha <= 0.0)
+    Rcpp::stop("alpha must be a positive finite scalar");
+  if (!std::isfinite(freqCutoff) || freqCutoff < 0.0 || freqCutoff > 1.0)
+    Rcpp::stop("freqCutoff must be a finite scalar in [0, 1]");
+
+  std::vector<unsigned char> white = logical_to_uc(whiteList, "whiteList");
+  std::vector<unsigned char> black = logical_to_uc(blackList, "blackList");
+  for (int i = 0; i < p; ++i) {
+    set_edge(black, i, i, p, true);
+    if (has_edge(white, i, i, p))
+      Rcpp::stop("whiteList diagonal must be FALSE");
+    for (int j = 0; j < p; ++j) {
+      if (has_edge(white, i, j, p) && has_edge(black, i, j, p))
+        Rcpp::stop("whiteList and blackList conflict");
+      if (i != j && has_edge(white, i, j, p) && has_edge(white, j, i, p))
+        Rcpp::stop("whiteList cannot contain both directions of an edge");
+      const double v = seleFreq(i, j);
+      if (!std::isfinite(v) || v < 0.0 || v > 1.0)
+        Rcpp::stop("selection frequencies must be finite values in [0, 1]");
+    }
+  }
+  if (!is_dag_uc(white, p)) Rcpp::stop("whiteList must be acyclic");
+
+  std::vector<EdgeCandidate> cands;
+  cands.reserve(p * p);
+  for (int to = 0; to < p; ++to)
+    for (int from = 0; from < p; ++from) {
+      if (from == to) continue;
+      const double sf  = seleFreq(from, to);
+      const double gsf = sf + (1.0 - alpha / 2.0) * seleFreq(to, from);
+      if (gsf > freqCutoff) {
+        EdgeCandidate c; c.from = from; c.to = to; c.sf = sf; c.gsf = gsf;
+        cands.push_back(c);
+      }
+    }
+
+  std::sort(cands.begin(), cands.end(), [](const EdgeCandidate& a, const EdgeCandidate& b) {
+    if (a.gsf != b.gsf) return a.gsf > b.gsf;
+    if (a.sf  != b.sf)  return a.sf  > b.sf;
+    if (a.from != b.from) return a.from < b.from;
+    return a.to < b.to;
+  });
+
+  std::vector<unsigned char> result = white;
+  AdjList parents = parents_from_uc(result, p);
+  for (std::size_t k = 0; k < cands.size(); ++k) {
+    const int from = cands[k].from, to = cands[k].to;
+    if (verbose)
+      Rcpp::Rcout << (k + 1) << "th operation: " << (from + 1) << " -> " << (to + 1) << "\n";
+    if (has_edge(black, from, to, p) || has_edge(white, from, to, p) ||
+        has_edge(result, to, from, p)) continue;
+    if (!edge_on_loop_cpp(from, to, parents)) {
+      set_edge(result, from, to, p, true);
+      parents[to].push_back(from);
+    } else if (verbose) {
+      Rcpp::Rcout << "not pass acyclic check\n";
+    }
+  }
+  return wrap_int_graph(result, p);
+}
+
 } // namespace
+
+// ---- Exported: score_shd_freq_cpp ----
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix score_shd_freq_cpp(const Rcpp::NumericMatrix& freq,
+                                        double alpha, double freqCutoff,
+                                        const Rcpp::LogicalMatrix& whiteList,
+                                        const Rcpp::LogicalMatrix& blackList,
+                                        bool verbose = false) {
+  Rcpp::NumericMatrix cleanFreq = Rcpp::clone(freq);
+  const int p = cleanFreq.nrow();
+  if (cleanFreq.ncol() != p) Rcpp::stop("freq must be a square matrix");
+  for (int i = 0; i < p; ++i) cleanFreq(i, i) = 0.0;
+  return aggregate_freq(cleanFreq, alpha, freqCutoff, whiteList, blackList, verbose);
+}
+
+// ---- Exported: score_shd_cpp ----
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix score_shd_cpp(const Rcpp::NumericVector& bootAdj,
+                                   double alpha, double freqCutoff,
+                                   const Rcpp::LogicalMatrix& whiteList,
+                                   const Rcpp::LogicalMatrix& blackList,
+                                   bool verbose = false) {
+  Rcpp::IntegerVector dims = bootAdj.attr("dim");
+  if (dims.size() != 3) Rcpp::stop("boot.adj must be a p by p by B array");
+  const int p = dims[0], p2 = dims[1], nb = dims[2];
+  if (p <= 0 || p2 != p || nb <= 0)
+    Rcpp::stop("boot.adj must be a p by p by B array with B >= 1");
+  Rcpp::NumericMatrix freq(p, p);
+  const int sliceSize = p * p;
+  for (int b = 0; b < nb; ++b)
+    for (int to = 0; to < p; ++to)
+      for (int from = 0; from < p; ++from) {
+        const double v = bootAdj[from + to * p + b * sliceSize];
+        if (!std::isfinite(v) || (v != 0.0 && v != 1.0))
+          Rcpp::stop("boot.adj entries must be finite 0/1 values");
+        freq(from, to) += v;
+      }
+  const double nb_d = static_cast<double>(nb);
+  for (int i = 0; i < p; ++i) {
+    for (int j = 0; j < p; ++j) freq(i, j) /= nb_d;
+    freq(i, i) = 0.0;
+  }
+  return aggregate_freq(freq, alpha, freqCutoff, whiteList, blackList, verbose);
+}
 
 // ---- Exported: edgeOnLoop ----
 // Called from the score_shd R function with 0-based node indices and a

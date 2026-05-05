@@ -1,55 +1,78 @@
-score_shd <- function(boot.adj, alpha = 1, threshold = 0,
-                      whitelist = NULL, blacklist = NULL,
-                      max.step = NULL, verbose = FALSE) {
-  ## Aggregate bootstrap DAGs via generalised SHD frequency.
-  ##
-  ## boot.adj: p by p by nb logical/integer array of bootstrap adjacency matrices
-  ## alpha:    reversal weight in GSF: gsf(i,j) = sf(i,j) + (1 - alpha/2)*sf(j,i)
-  ## threshold: freq.cut = (1 - threshold)/2; edges with GSF <= freq.cut are excluded
-  ## whitelist/blacklist: p by p 0/1 matrices (whitelist edges always included,
-  ##   blacklist edges never included); whitelist must be acyclic
-  ## Returns: p by p 0/1 adjacency matrix
-
-  p  <- dim(boot.adj)[1]
-  nb <- dim(boot.adj)[3]
-
-  if (is.null(whitelist))  whitelist  <- matrix(0, p, p)
-  if (is.null(blacklist))  blacklist  <- matrix(0, p, p)
-
-  res     <- whitelist
-  par.set <- lapply(seq_len(p), function(i) which(res[, i] == 1) - 1L)
-
-  sele.freq <- apply(boot.adj, c(1, 2), mean)
-  gen.freq  <- sele.freq + (1 - alpha / 2) * t(sele.freq)
-
-  freq.cut <- (1 - threshold) / 2
-
-  indices   <- which(!is.na(sele.freq), arr.ind = TRUE)
-  df        <- data.frame(i   = indices[, 1],
-                          j   = indices[, 2],
-                          SF  = sele.freq[indices],
-                          GSF = gen.freq[indices])
-  df_sorted   <- df[order(-df$GSF), ]
-  df_filtered <- df_sorted[df_sorted$GSF > freq.cut, ]
-
-  if (nrow(df_filtered) > 0) {
-    for (k in seq_len(nrow(df_filtered))) {
-      from.node <- df_filtered[k, "i"]
-      to.node   <- df_filtered[k, "j"]
-
-      if (verbose)
-        message(k, "th operation: ", from.node, " -> ", to.node)
-
-      if (!blacklist[from.node, to.node] && !whitelist[from.node, to.node]) {
-        if (!edgeOnLoop(from.node - 1L, to.node - 1L, par.set)) {
-          res[from.node, to.node]  <- 1
-          par.set[[to.node]] <- c(par.set[[to.node]], from.node - 1L)
-        } else if (verbose) {
-          message("  not acyclic, skipped")
-        }
-      }
-    }
+.validate_graph_constraint <- function(x, p, name, default = FALSE) {
+  if (is.null(x)) {
+    x <- matrix(default, p, p)
   }
+  if (!is.matrix(x) || !identical(dim(x), c(p, p)) || anyNA(x)) {
+    stop(name, " must be a p by p matrix with no NA values")
+  }
+  x <- x != 0
+  dimnames(x) <- NULL
+  x
+}
 
-  res
+.prepare_score_constraints <- function(p, whiteList, blackList) {
+  whiteList <- .validate_graph_constraint(whiteList, p, "whiteList")
+  blackList <- .validate_graph_constraint(blackList, p, "blackList")
+  diag(blackList) <- TRUE
+  list(whiteList = whiteList, blackList = blackList)
+}
+
+score_shd <- function(boot.adj, alpha = 1, freq.cutoff = 0.5,
+                      whiteList = NULL, blackList = NULL,
+                      max.step = NULL, verbose = FALSE) {
+  ## Aggregate a bootstrap DAG array into a consensus DAG using generalised SHD.
+  ##
+  ## For each ordered pair (i, j), the generalised score is:
+  ##   gsf(i, j) = sf(i, j) + (1 - alpha/2) * sf(j, i)
+  ## where sf(i, j) = fraction of bootstrap DAGs containing edge i->j.
+  ## A pair enters the candidate set iff gsf(i, j) > freq.cutoff.
+  ## Candidates are added greedily in decreasing gsf order, skipping any
+  ## edge that would create a cycle or violate a list constraint.
+  if (!is.null(max.step)) {
+    warning("max.step is deprecated and has no effect", call. = FALSE)
+  }
+  if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) || alpha <= 0) {
+    stop("alpha must be a positive finite scalar")
+  }
+  if (!is.numeric(freq.cutoff) || length(freq.cutoff) != 1L ||
+      !is.finite(freq.cutoff) || freq.cutoff < 0 || freq.cutoff > 1) {
+    stop("freq.cutoff must be a finite scalar in [0, 1]")
+  }
+  if (is.null(dim(boot.adj)) || length(dim(boot.adj)) != 3L ||
+      dim(boot.adj)[1] != dim(boot.adj)[2]) {
+    stop("boot.adj must be a p by p by B array")
+  }
+  p <- dim(boot.adj)[1]
+  constraints <- .prepare_score_constraints(p, whiteList, blackList)
+  score_shd_cpp(boot.adj, alpha, freq.cutoff,
+                constraints$whiteList, constraints$blackList, verbose)
+}
+
+score_shd_freq <- function(freq, alpha = 1, freq.cutoff = 0.5,
+                           whiteList = NULL, blackList = NULL,
+                           max.step = NULL, verbose = FALSE) {
+  ## Frequency-matrix variant of score_shd; pairs with hcSC_boot(output_type="freq")
+  ## so large bootstrap runs do not need to retain all individual adjacency arrays.
+  if (!is.null(max.step)) {
+    warning("max.step is deprecated and has no effect", call. = FALSE)
+  }
+  if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) || alpha <= 0) {
+    stop("alpha must be a positive finite scalar")
+  }
+  if (!is.numeric(freq.cutoff) || length(freq.cutoff) != 1L ||
+      !is.finite(freq.cutoff) || freq.cutoff < 0 || freq.cutoff > 1) {
+    stop("freq.cutoff must be a finite scalar in [0, 1]")
+  }
+  if (!is.matrix(freq) || nrow(freq) != ncol(freq)) {
+    stop("freq must be a square matrix")
+  }
+  freq <- as.matrix(freq)
+  storage.mode(freq) <- "double"
+  if (any(!is.finite(freq)) || any(freq < 0) || any(freq > 1)) {
+    stop("freq must contain finite values in [0, 1]")
+  }
+  p <- nrow(freq)
+  constraints <- .prepare_score_constraints(p, whiteList, blackList)
+  score_shd_freq_cpp(freq, alpha, freq.cutoff,
+                     constraints$whiteList, constraints$blackList, verbose)
 }

@@ -12,6 +12,40 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// score_shd_freq_cpp
+Rcpp::IntegerMatrix score_shd_freq_cpp(const Rcpp::NumericMatrix& freq, double alpha, double freqCutoff, const Rcpp::LogicalMatrix& whiteList, const Rcpp::LogicalMatrix& blackList, bool verbose);
+RcppExport SEXP _LRnetSTv2_score_shd_freq_cpp(SEXP freqSEXP, SEXP alphaSEXP, SEXP freqCutoffSEXP, SEXP whiteListSEXP, SEXP blackListSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type freqCutoff(freqCutoffSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type whiteList(whiteListSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type blackList(blackListSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(score_shd_freq_cpp(freq, alpha, freqCutoff, whiteList, blackList, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+
+// score_shd_cpp
+Rcpp::IntegerMatrix score_shd_cpp(const Rcpp::NumericVector& bootAdj, double alpha, double freqCutoff, const Rcpp::LogicalMatrix& whiteList, const Rcpp::LogicalMatrix& blackList, bool verbose);
+RcppExport SEXP _LRnetSTv2_score_shd_cpp(SEXP bootAdjSEXP, SEXP alphaSEXP, SEXP freqCutoffSEXP, SEXP whiteListSEXP, SEXP blackListSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type bootAdj(bootAdjSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type freqCutoff(freqCutoffSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type whiteList(whiteListSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type blackList(blackListSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(score_shd_cpp(bootAdj, alpha, freqCutoff, whiteList, blackList, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+
 // edgeOnLoop
 bool edgeOnLoop(int fromNode, int toNode, const Rcpp::List& parSet);
 RcppExport SEXP _LRnetSTv2_edgeOnLoop(SEXP fromNodeSEXP, SEXP toNodeSEXP, SEXP parSetSEXP) {
@@ -47,8 +81,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_LRnetSTv2_edgeOnLoop", (DL_FUNC) &_LRnetSTv2_edgeOnLoop, 3},
-    {"_LRnetSTv2_hcSC_",      (DL_FUNC) &_LRnetSTv2_hcSC_,      9},
+    {"_LRnetSTv2_score_shd_freq_cpp", (DL_FUNC) &_LRnetSTv2_score_shd_freq_cpp, 6},
+    {"_LRnetSTv2_score_shd_cpp",      (DL_FUNC) &_LRnetSTv2_score_shd_cpp,      6},
+    {"_LRnetSTv2_edgeOnLoop",         (DL_FUNC) &_LRnetSTv2_edgeOnLoop,         3},
+    {"_LRnetSTv2_hcSC_",              (DL_FUNC) &_LRnetSTv2_hcSC_,              9},
     {NULL, NULL, 0}
 };
 

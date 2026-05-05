@@ -30,7 +30,9 @@ Key improvements over LRnetST:
 - **Correctness fix**: constant columns arising from row-selection after whitelisting indicator → logcount parents are silently dropped, keeping the design matrix full-rank
 - **Acyclicity cache bug fix**: double-`if` in the reverse-operation update block replaced with `if/else if`; prevents a cache entry from being incorrectly set to `true` after already being set to `false`
 - **Reproducible RNG**: per-run `mt19937` generator replaces global `srand/rand`; results are fully reproducible across platforms
-- **Unified parallel bootstrap**: `hcSC_boot(n.thread=)` replaces the separate `hcSC_boot_parallel` function; uses the `future` backend
+- **Unified parallel backend**: `hcSC_boot(backend=, workers=)` replaces the old `n.thread` argument and the separate `hcSC_boot_parallel` function; uses the `future` backend with reproducible upfront RNG
+- **`score_shd_freq`**: new function that aggregates a frequency matrix directly (avoids storing the full 3D bootstrap array for large runs)
+- **`output_type`** parameter in `hcSC_boot`: `"array"` (default), `"freq"`, or `"both"` — pairs with `score_shd_freq` to avoid peak memory costs
 
 ## Installation
 
@@ -65,13 +67,20 @@ hcSC_boot: Learn a DAG from each bootstrap resample of the ST data; supports
   parallel execution via the future backend.
 
 LRnetSTv2::hcSC_boot(Y, n.boot, nodeType, whiteList, blackList, scale, tol, maxStep,
-                     restart, seed, nodeShuffle, bootDensityThre, n.thread, verbose)
+                     restart, seed, nodeShuffle, bootDensityThre,
+                     backend, workers, verbose, output_type)
 
 
-score_shd: Aggregate an ensemble of DAGs by minimising generalised structural
+score_shd: Aggregate a 3D bootstrap array of DAGs by minimising generalised structural
   Hamming distance (gSHD).
 
-LRnetSTv2::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step, verbose)
+LRnetSTv2::score_shd(boot.adj, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
+
+
+score_shd_freq: Aggregate a bootstrap frequency matrix by minimising gSHD.
+  Pairs with hcSC_boot(output_type = "freq") to avoid storing the full 3D array.
+
+LRnetSTv2::score_shd_freq(freq, alpha, freq.cutoff, whiteList, blackList, max.step, verbose)
 ```
 
 ## Arguments
@@ -87,7 +96,7 @@ LRnetSTv2::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step,
 | Parameter | Default | Description |
 | :-------- | :-----: | :---------- |
 | Y | | An n by p data matrix: n – sample size, p – number of variables. When using the SC workflow, pass `prep$Y` from `SC_prepare`. |
-| n.boot *(hcSC_boot only)* | 1 | Number of bootstrap resamples. |
+| n.boot *(hcSC_boot only)* | 100 | Number of bootstrap resamples. |
 | nodeType | NULL | A character vector of length p specifying node type: `"c"` for continuous, `"b"` for binary. When using `SC_prepare`, pass `prep$nodeType`. Defaults to all `"c"` when NULL. |
 | whiteList | NULL | A p by p logical matrix; entry `[i,j] = TRUE` forces edge i → j into every learned DAG. When using `SC_prepare`, pass `prep$whiteList` (indicator_i → logcount_i edges). |
 | blackList | NULL | A p by p logical matrix; entry `[i,j] = TRUE` forbids edge i → j. When using `SC_prepare`, pass `prep$blackList` (logcount_i → indicator_i edges). Diagonal is always blacklisted. |
@@ -98,19 +107,22 @@ LRnetSTv2::score_shd(boot.adj, alpha, threshold, whitelist, blacklist, max.step,
 | seed | 1 | Integer seed for the mt19937 random number generator (used for restart tie-breaking and, in `hcSC_boot`, for bootstrap resampling). |
 | nodeShuffle *(hcSC_boot only)* | FALSE | Logical: randomly permute the node ordering before each bootstrap DAG search. |
 | bootDensityThre *(hcSC_boot only)* | 0.1 | Minimum column-wise nonzero fraction allowed in any bootstrap resample (rejection sampling). Must be strictly between 0 and the lowest observed column nonzero rate. |
-| n.thread *(hcSC_boot only)* | 1 | Number of parallel workers. `1` runs sequentially. Values > 1 launch a `future::multisession` plan with the requested number of workers. |
+| backend *(hcSC_boot only)* | `"sequential"` | Execution backend: `"sequential"` (default, runs in the current session) or `"future"` (launches a `future::multisession` plan). |
+| workers *(hcSC_boot only)* | NULL | Number of parallel workers for `backend = "future"`. `NULL` uses all available cores minus one, capped at `n.boot`. |
+| output_type *(hcSC_boot only)* | `"array"` | Output format: `"array"` (p × p × n.boot integer array), `"freq"` (p × p frequency matrix), or `"both"` (a list with both). Use `"freq"` or `"both"` with `score_shd_freq` to avoid holding the full array in memory. |
 | verbose | FALSE | Logical: print step-by-step information. |
 
-### Arguments for `score_shd`
+### Arguments for `score_shd` and `score_shd_freq`
 
 | Parameter | Default | Description |
 | :-------- | :-----: | :---------- |
-| boot.adj | | A p by p by B numeric array of bootstrap adjacency matrices (B DAGs to aggregate). Typically the output of `hcSC_boot`. |
-| alpha | 1 | Generalised SHD weight: `gSF(i,j) = SF(i,j) + (1 − α/2)·SF(j,i)`. Larger α produces more aggressive aggregation (fewer edges, lower FDR, lower power). |
-| threshold | 0 | Frequency cut-off = `(1 − threshold)/2`. Edges with gSF ≤ cut-off are excluded. Default `0` corresponds to a cut-off of 0.5. |
-| whitelist | NULL | A p by p 0/1 matrix: entry `[i,j] = 1` forces edge i → j into the aggregated DAG. |
-| blacklist | NULL | A p by p 0/1 matrix: entry `[i,j] = 1` forbids edge i → j from the aggregated DAG. |
-| max.step | NULL | Legacy parameter; has no effect. |
+| boot.adj *(score_shd only)* | | A p by p by B numeric array of bootstrap adjacency matrices. Typically `hcSC_boot(output_type = "array")` output. |
+| freq *(score_shd_freq only)* | | A p by p numeric matrix of bootstrap edge frequencies (values in [0, 1]). Typically `hcSC_boot(output_type = "freq")` output. |
+| alpha | 1 | Generalised SHD weight: `gSF(i,j) = SF(i,j) + (1 − α/2)·SF(j,i)`. Larger α penalises undirected edges more and produces sparser aggregated DAGs. |
+| freq.cutoff | 0.5 | Minimum generalised score required for a candidate edge to be considered. Edges with `gSF(i,j) ≤ freq.cutoff` are excluded. |
+| whiteList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forces edge i → j into the aggregated DAG. |
+| blackList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forbids edge i → j. |
+| max.step | NULL | Deprecated; emits a warning and has no effect. |
 | verbose | FALSE | Logical: print edge-addition information. |
 
 ## Value
@@ -139,9 +151,15 @@ A list with four components:
 
 ### Value for `hcSC_boot`
 
-A p by p by n.boot numeric array. Slice `[,,b]` is the 0/1 adjacency matrix of the DAG learned from bootstrap resample b.
+Depends on `output_type`:
 
-### Value for `score_shd`
+| `output_type` | Return value |
+| :------------ | :----------- |
+| `"array"` | p × p × n.boot integer array; slice `[,,b]` is the adjacency matrix from resample b. |
+| `"freq"` | p × p numeric matrix of edge frequencies (proportion of resamples containing each edge). |
+| `"both"` | A list with `$adjacency` (array) and `$freq` (frequency matrix). |
+
+### Value for `score_shd` and `score_shd_freq`
 
 A p by p 0/1 integer matrix: the adjacency matrix of the aggregated DAG.
 
@@ -168,17 +186,17 @@ res <- LRnetSTv2::hcSC(
 )
 adj.single <- res$adjacency   # 322 edges
 
-# (ii) Bootstrap DAG learning (sequential; use n.thread > 1 for parallel)
+# (ii) Bootstrap DAG learning (sequential; use backend = "future" for parallel)
 boot.adj <- LRnetSTv2::hcSC_boot(
   Y       = Y.n, n.boot = 50,
   nodeType = rep("c", p),
   scale   = TRUE, tol = 1e-6, maxStep = 1000,
   restart = 10, seed = 1, nodeShuffle = TRUE,
-  bootDensityThre = 0.1, n.thread = 1, verbose = FALSE
+  bootDensityThre = 0.1, backend = "sequential", verbose = FALSE
 )
 
 # (iii) Bootstrap aggregation
-adj.bag <- LRnetSTv2::score_shd(boot.adj, alpha = 1, threshold = 0)
+adj.bag <- LRnetSTv2::score_shd(boot.adj, alpha = 1, freq.cutoff = 0.5)
 
 # (iv) Evaluation
 ## DAG
@@ -255,12 +273,12 @@ boot.sc <- LRnetSTv2::hcSC_boot(
   whiteList       = whiteList, blackList = blackList,
   scale           = TRUE, tol = 1e-6, maxStep = 1000,
   restart         = 10, seed = 1, nodeShuffle = FALSE,
-  bootDensityThre = 0.05, n.thread = 1, verbose = FALSE
+  bootDensityThre = 0.05, backend = "sequential", verbose = FALSE
 )
 
 # (v) Bootstrap aggregation
-adj.bag.2p <- LRnetSTv2::score_shd(boot.sc, alpha = 1, threshold = 0,
-                                    whitelist = whiteList)
+adj.bag.2p <- LRnetSTv2::score_shd(boot.sc, alpha = 1, freq.cutoff = 0.5,
+                                    whiteList = whiteList)
 
 # (vi) Evaluation on the full 2p × 2p model
 ## DAG
