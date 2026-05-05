@@ -11,7 +11,6 @@
 - [Arguments](#Arguments)
 - [Value](#Value)
 - [Examples](#Examples)
-- [Comparison with LRnetST](#Comparison)
 - [Contributions](#Contributions)
 
 ## Reference
@@ -22,17 +21,7 @@ Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, https://doi.org/10.
 
 ## Overview
 
-LRnetSTv2 is an improved implementation of LRnetST for learning directed acyclic graphs (DAGs) from spatial transcriptomics (ST) data. The data contain mixed continuous (log-transformed count) and binary (on/off indicator) nodes, with zero-inflation modelled explicitly via paired node structures.
-
-Key improvements over LRnetST:
-- **~5.7× faster single HC run** via score caching (add/delete/reverse caches with version stamps) and precomputed row-selection masks
-- **~3.1× faster bootstrap** (50 resamples: 406 s vs 1269 s on the example dataset)
-- **Correctness fix**: constant columns arising from row-selection after whitelisting indicator → logcount parents are silently dropped, keeping the design matrix full-rank
-- **Acyclicity cache bug fix**: double-`if` in the reverse-operation update block replaced with `if/else if`; prevents a cache entry from being incorrectly set to `true` after already being set to `false`
-- **Reproducible RNG**: per-run `mt19937` generator replaces global `srand/rand`; results are fully reproducible across platforms
-- **Unified parallel backend**: `hcSC_boot(backend=, workers=)` replaces the old `n.thread` argument and the separate `hcSC_boot_parallel` function; uses the `future` backend with reproducible upfront RNG
-- **`score_shd_freq`**: new function that aggregates a frequency matrix directly (avoids storing the full 3D bootstrap array for large runs)
-- **`output_type`** parameter in `hcSC_boot`: `"array"` (default), `"freq"`, or `"both"` — pairs with `score_shd_freq` to avoid peak memory costs
+LRnetSTv2 is an improved implementation of LRnetST for learning directed acyclic graphs (DAGs) from spatial transcriptomics (ST) data. The data contain mixed continuous (log-transformed count) and binary (on/off indicator) nodes, with zero-inflation modelled explicitly via paired node structures. For a detailed account of the C++ and R-layer changes relative to LRnetST, see the implementation notes (`LRnetSTv2_implementation_notes.md`).
 
 ## Installation
 
@@ -103,7 +92,7 @@ LRnetSTv2::score_shd_freq(freq, alpha, freq.cutoff, whiteList, blackList, max.st
 | scale | TRUE | Logical: L2-normalise each continuous column so that `‖Y[,i]‖²/n = 1` (zero pattern is preserved). |
 | tol | 1e-6 | Minimum BIC improvement required to accept a hill-climbing step. |
 | maxStep | 2000 | Maximum number of hill-climbing steps per restart. |
-| restart | 10 | Number of random restarts. The best-scoring DAG across all restarts is returned. |
+| restart | 1 | Number of random restarts. The best-scoring DAG across all restarts is returned. |
 | seed | 1 | Integer seed for the mt19937 random number generator (used for restart tie-breaking and, in `hcSC_boot`, for bootstrap resampling). |
 | nodeShuffle *(hcSC_boot only)* | FALSE | Logical: randomly permute the node ordering before each bootstrap DAG search. |
 | bootDensityThre *(hcSC_boot only)* | 0.1 | Minimum column-wise nonzero fraction allowed in any bootstrap resample (rejection sampling). Must be strictly between 0 and the lowest observed column nonzero rate. |
@@ -182,7 +171,7 @@ res <- LRnetSTv2::hcSC(
   Y       = Y.n,
   nodeType = rep("c", p),
   scale   = TRUE, maxStep = 1000, tol = 1e-6,
-  restart = 10, seed = 1, verbose = FALSE
+  restart = 1, seed = 1, verbose = FALSE
 )
 adj.single <- res$adjacency   # 322 edges
 
@@ -272,7 +261,7 @@ boot.sc <- LRnetSTv2::hcSC_boot(
   nodeType        = node.type,
   whiteList       = whiteList, blackList = blackList,
   scale           = TRUE, tol = 1e-6, maxStep = 1000,
-  restart         = 10, seed = 1, nodeShuffle = FALSE,
+  restart         = 1, seed = 1, nodeShuffle = FALSE,
   bootDensityThre = 0.05, backend = "sequential", verbose = FALSE
 )
 
@@ -304,39 +293,6 @@ vstr.corr.2p    <- LRnetSTv2::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
 1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5417
 nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1774
 ```
-
-## Comparison with LRnetST
-
-Results on the built-in `example` dataset (`n = 102`, `p = 102`, 109 true edges, all-continuous nodes). Both packages used `seed = 1`, `restart = 10`, `maxStep = 1000`, `n.boot = 50`, sequential execution.
-
-### Timing
-
-| | Single HC | Bootstrap (n.boot = 50) |
-| :--- | ---: | ---: |
-| LRnetST | 5.98 s | 1269 s |
-| LRnetSTv2 | **1.04 s** | **406 s** |
-
-LRnetSTv2 is **5.7× faster** for a single HC run and **3.1× faster** for 50 bootstrap resamples.
-
-### Accuracy (bootstrap-aggregated DAG, n.boot = 50)
-
-| Metric | LRnetST | LRnetSTv2 |
-| :----- | :-----: | :-------: |
-| **DAG** | | |
-| FDR    | 0.4375 | **0.4250** |
-| Power  | 0.5780 | **0.6330** |
-| Edges  | 112    | 120       |
-| **Skeleton** | | |
-| FDR    | **0.1786** | 0.2417 |
-| Power  | **0.8440** | 0.8349 |
-| **Moral graph** | | |
-| FDR    | **0.2414** | 0.3495 |
-| Power  | 0.7174 | **0.7283** |
-| **V-structures** | | |
-| FDR    | **0.3968** | 0.5517 |
-| Power  | 0.4935 | **0.5065** |
-
-LRnetSTv2 improves DAG-level FDR and power. Skeleton and moral-graph metrics are comparable; the difference at the V-structure level is expected since improved score caching changes tie-breaking behaviour in restarts (different local optima are found). For zero-inflated ST data use the SC workflow (Example 2), which models the on/off indicators explicitly and achieves substantially lower skeleton FDR (0.07 vs 0.18–0.24).
 
 ## Contributions
 
