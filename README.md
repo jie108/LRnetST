@@ -158,7 +158,6 @@ A p by p 0/1 integer matrix: the adjacency matrix of the aggregated DAG.
 
 ```r
 library(LRnetSTv2)
-library(LRnetST)
 data(example)
 
 Y.n      <- example$Y        # 102 × 102 log-count matrix
@@ -223,7 +222,6 @@ edge for every gene j.
 
 ```r
 library(LRnetSTv2)
-library(LRnetST)
 data(example)
 
 Y.n      <- example$Y        # 102 × 102 log-count matrix (no zeros)
