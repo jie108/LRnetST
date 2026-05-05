@@ -88,7 +88,7 @@
        seed      = controls$seed)
 }
 
-.validate_boot_density <- function(Y, nodeType, bootDensityThre) {
+.validate_boot_density <- function(Y, bootDensityThre) {
   if (!is.numeric(bootDensityThre) || length(bootDensityThre) != 1L ||
       !is.finite(bootDensityThre) || bootDensityThre <= 0)
     stop("bootDensityThre must be a positive finite scalar")
@@ -233,7 +233,7 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
 
   args <- .validate_hc_inputs(Y, nodeType, whiteList, blackList,
                                tol, maxStep, restart, seed)
-  .validate_boot_density(args$Y, args$nodeType, bootDensityThre)
+  .validate_boot_density(args$Y, bootDensityThre)
 
   p <- ncol(args$Y)
 

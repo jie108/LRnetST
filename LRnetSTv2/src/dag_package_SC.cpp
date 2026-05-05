@@ -472,7 +472,7 @@ Rcpp::IntegerMatrix aggregate_freq(const Rcpp::NumericMatrix& seleFreq,
       if (from == to) continue;
       const double sf  = seleFreq(from, to);
       const double gsf = sf + (1.0 - alpha / 2.0) * seleFreq(to, from);
-      if (gsf > freqCutoff) {
+      if (gsf > freqCutoff && !has_edge(white, from, to, p)) {
         EdgeCandidate c; c.from = from; c.to = to; c.sf = sf; c.gsf = gsf;
         cands.push_back(c);
       }
@@ -771,8 +771,10 @@ Rcpp::List hcSC1(const Rcpp::NumericMatrix& Y,
     ++acceptedSteps;
   }
 
+  Rcpp::IntegerMatrix adjOut(p, p);
+  for (int i = 0; i < p * p; ++i) adjOut[i] = curGraph[i] ? 1 : 0;
   return Rcpp::List::create(
-    Rcpp::Named("adjacency")  = curGraph,
+    Rcpp::Named("adjacency")  = adjOut,
     Rcpp::Named("score")      = Rcpp::wrap(curScore),
     Rcpp::Named("operations") = stepOper,
     Rcpp::Named("deltaMin")   = stepDelta);

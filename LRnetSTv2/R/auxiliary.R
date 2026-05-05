@@ -1,33 +1,24 @@
 cal_order <- function(adj_matrix) {
-  ## Topological order of nodes in a DAG.
+  ## Topological order of nodes in a DAG (Kahn's algorithm, O(p + E)).
   ## adj_matrix[i,j] = 1 means edge i->j.
-  ## Returns a length-p permutation vector.
-
+  ## Returns a length-p permutation vector; stops with an error if the graph
+  ## contains a cycle.
   p <- nrow(adj_matrix)
   if (nrow(adj_matrix) != ncol(adj_matrix))
     stop("adjacency matrix is not square")
-
-  node_order <- NULL
-  ind_p      <- numeric(p)
-  csums      <- colSums(adj_matrix)
-
-  npar_index <- which(csums == 0)
-  hpar_index <- which(csums != 0)
-  ind_p[npar_index] <- 1
-  node_order <- c(node_order, npar_index)
-  current    <- hpar_index
-
-  while (length(current) > 0) {
-    j          <- current[1]
-    par_index  <- which(adj_matrix[, j] == 1)
-    if (all(ind_p[par_index] == 1)) {
-      node_order <- c(node_order, j)
-      current    <- current[-1]
-      ind_p[j]   <- 1
-    } else {
-      current <- c(current[-1], j)
+  indeg      <- colSums(adj_matrix != 0)
+  queue      <- which(indeg == 0L)
+  node_order <- integer(0)
+  while (length(queue) > 0L) {
+    node       <- queue[1L]; queue <- queue[-1L]
+    node_order <- c(node_order, node)
+    for (child in which(adj_matrix[node, ] != 0)) {
+      indeg[child] <- indeg[child] - 1L
+      if (indeg[child] == 0L) queue <- c(queue, child)
     }
   }
+  if (length(node_order) != p)
+    stop("adjacency matrix contains a cycle")
   node_order
 }
 

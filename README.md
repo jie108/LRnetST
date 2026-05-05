@@ -109,8 +109,8 @@ LRnetSTv2::score_shd_freq(freq, alpha, freq.cutoff, whiteList, blackList, max.st
 | freq *(score_shd_freq only)* | | A p by p numeric matrix of bootstrap edge frequencies (values in [0, 1]). Typically `hcSC_boot(output_type = "freq")` output. |
 | alpha | 1 | Generalised SHD weight: `gSF(i,j) = SF(i,j) + (1 − α/2)·SF(j,i)`. Larger α penalises undirected edges more and produces sparser aggregated DAGs. |
 | freq.cutoff | 0.5 | Minimum generalised score required for a candidate edge to be considered. Edges with `gSF(i,j) ≤ freq.cutoff` are excluded. |
-| whiteList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forces edge i → j into the aggregated DAG. |
-| blackList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forbids edge i → j. |
+| whiteList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forces edge i → j into the aggregated DAG. **Pass the same `whiteList` used in `hcSC_boot`** so that forced edges are initialised correctly before the greedy aggregation. |
+| blackList | NULL | A p by p logical or 0/1 matrix: entry `[i,j] = TRUE/1` forbids edge i → j. **Pass the same `blackList` used in `hcSC_boot`** to keep the aggregated DAG consistent with the per-replicate constraints. |
 | max.step | NULL | Deprecated; emits a warning and has no effect. |
 | verbose | FALSE | Logical: print edge-addition information. |
 
