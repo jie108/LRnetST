@@ -4,3 +4,6 @@ LRnetSTv2_implementation_notes.md
 *.RData
 *.csv
 /*.R
+LRnetSTv2/src/*.o
+LRnetSTv2/src/*.so
+LRnetSTv2/..Rcheck/
