@@ -174,12 +174,24 @@ res <- LRnetSTv2::hcSC(
 )
 adj.single <- res$adjacency   # 322 edges
 
+#  Evaluation
+## DAG
+sum(adj.single == 1 & true.dir == 0) / sum(adj.single == 1)   # FDR:  
+sum(adj.single == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 
+
+## Skeleton
+true.ske    <- LRnetSTv2::skeleton(true.dir)
+adj.bag.ske <- LRnetSTv2::skeleton(adj.bag)
+sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.2417
+sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8349
+
+
 # (ii) Bootstrap DAG learning (sequential; use backend = "future" for parallel)
 boot.adj <- LRnetSTv2::hcSC_boot(
   Y       = Y.n, n.boot = 50,
   nodeType = rep("c", p),
   scale   = TRUE, tol = 1e-6, maxStep = 1000,
-  restart = 10, seed = 1, nodeShuffle = TRUE,
+  restart = 1, seed = 1, nodeShuffle = TRUE,
   bootDensityThre = 0.1, backend = "sequential", verbose = FALSE
 )
 
