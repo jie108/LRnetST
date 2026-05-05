@@ -157,6 +157,7 @@ A p by p 0/1 integer matrix: the adjacency matrix of the aggregated DAG.
 ### Example 1: All-continuous nodes (built-in example dataset)
 
 ```r
+rm(list=ls())
 library(LRnetSTv2)
 data(example)
 
@@ -176,23 +177,26 @@ adj.single <- res$adjacency   # 322 edges
 
 #  Evaluation
 ## DAG
-sum(adj.single == 1 & true.dir == 0) / sum(adj.single == 1)   # FDR:  
-sum(adj.single == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 
+sum(adj.single == 1 & true.dir == 0) / sum(adj.single == 1)   # FDR:  0.8803681
+sum(adj.single == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.3577982
 
 ## Skeleton
 true.ske    <- LRnetSTv2::skeleton(true.dir)
 adj.single.ske <- LRnetSTv2::skeleton(adj.single)
-sum(adj.single.ske == 1 & true.ske == 0) / sum(adj.single.ske == 1)  # FDR:  
-sum(adj.single.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 
+sum(adj.single.ske == 1 & true.ske == 0) / sum(adj.single.ske == 1)  # FDR: 0.7055215  
+sum(adj.single.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8807339
 
 
 # (ii) Bootstrap DAG learning (sequential; use backend = "future" for parallel)
 boot.adj <- LRnetSTv2::hcSC_boot(
-  Y       = Y.n, n.boot = 50,
+  Y       = Y.n, n.boot = 100,
   nodeType = rep("c", p),
   scale   = TRUE, tol = 1e-6, maxStep = 1000,
   restart = 1, seed = 1, nodeShuffle = TRUE,
-  bootDensityThre = 0.1, backend = "sequential", verbose = FALSE
+  bootDensityThre = 0.1, 
+  backend = "future", worker=5, 
+  output_type = "array",
+  verbose = FALSE
 )
 
 # (iii) Bootstrap aggregation
@@ -200,27 +204,27 @@ adj.bag <- LRnetSTv2::score_shd(boot.adj, alpha = 1, freq.cutoff = 0.5)
 
 # (iv) Evaluation
 ## DAG
-sum(adj.bag == 1 & true.dir == 0) / sum(adj.bag == 1)   # FDR:   0.4250
-sum(adj.bag == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.6330
+sum(adj.bag == 1 & true.dir == 0) / sum(adj.bag == 1)   # FDR:    0.3557692
+sum(adj.bag == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.6146789
 
 ## Skeleton
 true.ske    <- LRnetSTv2::skeleton(true.dir)
 adj.bag.ske <- LRnetSTv2::skeleton(adj.bag)
-sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.2417
-sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8349
+sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.1346154
+sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8256881
 
 ## Moral graph
 true.moral    <- LRnetSTv2::moral_graph(true.dir)
 adj.bag.moral <- LRnetSTv2::moral_graph(adj.bag)
-sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.3495
-sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.7283
+sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.1666667
+sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.7065217
 
 ## V-structures
 true.vstr    <- LRnetSTv2::vstructures(true.dir)
 adj.bag.vstr <- LRnetSTv2::vstructures(adj.bag)
 vstr.corr    <- LRnetSTv2::compare.vstructures(adj.bag.vstr, true.vstr)
-1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.5517
-nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.5065
+1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.3076923
+nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.4675325
 ```
 
 ### Example 2: SC workflow with zero-inflated data
@@ -233,6 +237,7 @@ DAG has a 2p × 2p block structure: the original Z→Z edges plus a fixed U_j �
 edge for every gene j.
 
 ```r
+rm(list=ls())
 library(LRnetSTv2)
 data(example)
 
@@ -267,41 +272,43 @@ for (j in seq_len(p)) true.dir.2p[p+j, j] <- 1L  # U_j -> Z_j (102 edges)
 
 # (iv) Bootstrap DAG learning
 boot.sc <- LRnetSTv2::hcSC_boot(
-  Y               = Y.sc, n.boot = 50,
+  Y               = Y.sc, n.boot = 100,
   nodeType        = node.type,
   whiteList       = whiteList, blackList = blackList,
   scale           = TRUE, tol = 1e-6, maxStep = 1000,
-  restart         = 1, seed = 1, nodeShuffle = FALSE,
-  bootDensityThre = 0.05, backend = "sequential", verbose = FALSE
+  restart         = 1, seed = 1, nodeShuffle = TRUE,
+  bootDensityThre = 0.05, 
+  output_type = "array",
+  backend = "future", worker=5, verbose = FALSE
 )
 
 # (v) Bootstrap aggregation
 adj.bag.2p <- LRnetSTv2::score_shd(boot.sc, alpha = 1, freq.cutoff = 0.5,
-                                    whiteList = whiteList)
+                                    whiteList = whiteList, blackList=blackList)
 
 # (vi) Evaluation on the full 2p × 2p model
 ## DAG
-sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2275
-sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6114
+sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2470588
+sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6066351
 
 ## Skeleton
 true.ske.2p    <- LRnetSTv2::skeleton(true.dir.2p)
 adj.bag.ske.2p <- LRnetSTv2::skeleton(adj.bag.2p)
-sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.0719
-sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7346
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.08235294
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7393365
 
 ## Moral graph
 true.moral.2p    <- LRnetSTv2::moral_graph(true.dir.2p)
 adj.bag.moral.2p <- LRnetSTv2::moral_graph(adj.bag.2p)
-sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.2134
-sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4759
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.2336066
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4734177
 
 ## V-structures
 true.vstr.2p    <- LRnetSTv2::vstructures(true.dir.2p)  # 186 true v-structures
 adj.bag.vstr.2p <- LRnetSTv2::vstructures(adj.bag.2p)
 vstr.corr.2p    <- LRnetSTv2::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
-1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5417
-nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1774
+1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5945946
+nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1612903
 ```
 
 ## Contributions
