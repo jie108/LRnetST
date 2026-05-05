@@ -194,7 +194,7 @@ boot.adj <- LRnetSTv2::hcSC_boot(
   scale   = TRUE, tol = 1e-6, maxStep = 1000,
   restart = 1, seed = 1, nodeShuffle = TRUE,
   bootDensityThre = 0.1, 
-  backend = "future", worker=5, 
+  backend = "future", workers = 5,
   output_type = "array",
   verbose = FALSE
 )
@@ -279,7 +279,7 @@ boot.sc <- LRnetSTv2::hcSC_boot(
   restart         = 1, seed = 1, nodeShuffle = TRUE,
   bootDensityThre = 0.05, 
   output_type = "array",
-  backend = "future", worker=5, verbose = FALSE
+  backend = "future", workers = 5, verbose = FALSE
 )
 
 # (v) Bootstrap aggregation

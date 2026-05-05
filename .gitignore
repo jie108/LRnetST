@@ -1,6 +1,8 @@
 LRnetST/
 LRnet-test.R
 LRnetSTv2_implementation_notes.md
+dagbagMv2_implementation_notes.md
+*.tar.gz
 *.RData
 *.csv
 /*.R

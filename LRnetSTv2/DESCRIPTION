@@ -10,6 +10,6 @@ Description: Local v2 package for learning directed acyclic graphs from spatial
     improved score caching, acyclicity cache correctness fixes, and future-based
     parallel bootstrap aggregation.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.0.4), future, stats
-Suggests: testthat
+Imports: Rcpp (>= 1.0.4)
+Suggests: future, testthat
 LinkingTo: Rcpp, RcppEigen, RcppNumerical

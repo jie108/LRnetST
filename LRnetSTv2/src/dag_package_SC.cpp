@@ -413,12 +413,21 @@ AdjList parents_from_uc(const std::vector<unsigned char>& g, int p) {
 }
 
 bool is_dag_uc(const std::vector<unsigned char>& g, int p) {
-  AdjList par = parents_from_uc(g, p);
-  for (int from = 0; from < p; ++from)
+  std::vector<int> indeg(p, 0);
+  for (int to = 0; to < p; ++to)
+    for (int from = 0; from < p; ++from)
+      if (has_edge(g, from, to, p)) ++indeg[to];
+  std::vector<int> q;
+  q.reserve(p);
+  for (int i = 0; i < p; ++i)
+    if (indeg[i] == 0) q.push_back(i);
+  int seen = 0;
+  for (int qi = 0; qi < (int)q.size(); ++qi) {
+    int node = q[qi]; ++seen;
     for (int to = 0; to < p; ++to)
-      if (has_edge(g, from, to, p) && edge_on_loop_cpp(from, to, par))
-        return false;
-  return true;
+      if (has_edge(g, node, to, p) && --indeg[to] == 0) q.push_back(to);
+  }
+  return seen == p;
 }
 
 Rcpp::IntegerMatrix wrap_int_graph(const std::vector<unsigned char>& g, int p) {
@@ -491,8 +500,7 @@ Rcpp::IntegerMatrix aggregate_freq(const Rcpp::NumericMatrix& seleFreq,
     const int from = cands[k].from, to = cands[k].to;
     if (verbose)
       Rcpp::Rcout << (k + 1) << "th operation: " << (from + 1) << " -> " << (to + 1) << "\n";
-    if (has_edge(black, from, to, p) || has_edge(white, from, to, p) ||
-        has_edge(result, to, from, p)) continue;
+    if (has_edge(black, from, to, p) || has_edge(result, to, from, p)) continue;
     if (!edge_on_loop_cpp(from, to, parents)) {
       set_edge(result, from, to, p, true);
       parents[to].push_back(from);

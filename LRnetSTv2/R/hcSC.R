@@ -57,9 +57,9 @@
   if (is.null(whiteList)) {
     whiteList <- matrix(FALSE, p, p)
   }
-  if (!is.matrix(whiteList) || !is.logical(whiteList) ||
-      !identical(dim(whiteList), c(p, p)) || anyNA(whiteList))
-    stop("whiteList must be a p by p logical matrix with no NA values")
+  if (!is.matrix(whiteList) || !identical(dim(whiteList), c(p, p)) || anyNA(whiteList))
+    stop("whiteList must be a p by p matrix with no NA values")
+  whiteList <- whiteList != 0; dimnames(whiteList) <- NULL
   if (any(diag(whiteList)))
     stop("whiteList diagonal must be FALSE")
   if (any(whiteList & t(whiteList)))
@@ -71,9 +71,9 @@
     blackList <- matrix(FALSE, p, p)
     diag(blackList) <- TRUE
   }
-  if (!is.matrix(blackList) || !is.logical(blackList) ||
-      !identical(dim(blackList), c(p, p)) || anyNA(blackList))
-    stop("blackList must be a p by p logical matrix with no NA values")
+  if (!is.matrix(blackList) || !identical(dim(blackList), c(p, p)) || anyNA(blackList))
+    stop("blackList must be a p by p matrix with no NA values")
+  blackList <- blackList != 0; dimnames(blackList) <- NULL
   diag(blackList) <- TRUE
   if (any(whiteList & blackList))
     stop("whiteList and blackList conflict")
@@ -292,9 +292,18 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
 SC_prepare <- function(logCount) {
   ## Input:  n by p log-count matrix (log2(count + 1) or similar).
   ## Output: list(Y, nodeType, whiteList, blackList) for hcSC / hcSC_boot.
-  ##   Y = cbind(logCount, logCount > 0): columns 1..p continuous, p+1..2p binary.
+  ##   Y = cbind(logCount, logCount != 0): columns 1..p continuous, p+1..2p binary.
   ##   whiteList: indicator_i -> logcount_i for every i (always a parent).
   ##   blackList: logcount_i -> indicator_i forbidden; diagonal forbidden.
+  if (!is.matrix(logCount) && !is.data.frame(logCount))
+    stop("logCount must be a numeric matrix or data frame")
+  logCount <- as.matrix(logCount); storage.mode(logCount) <- "double"
+  if (anyNA(logCount) || any(!is.finite(logCount)))
+    stop("logCount must contain only finite numeric values")
+  if (nrow(logCount) < 1L || ncol(logCount) < 1L)
+    stop("logCount must have positive numbers of rows and columns")
+  if (any(logCount < 0))
+    stop("logCount must be nonnegative (log-counts cannot be negative)")
   n <- nrow(logCount)
   p <- ncol(logCount)
   S <- matrix(as.numeric(logCount != 0), n, p)

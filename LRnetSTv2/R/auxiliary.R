@@ -84,6 +84,7 @@ skeleton <- function(adj.matrix) {
 compare.vstructures <- function(target.vstructures, true.vstructures) {
   ## Subset of true.vstructures that also appear in target.vstructures.
 
+  if (is.null(target.vstructures) || is.null(true.vstructures)) return(NULL)
   corr.v <- NULL
   if (!is.null(target.vstructures)) {
     target.vstructures <- matrix(target.vstructures, ncol = 3)
