@@ -181,9 +181,9 @@ sum(adj.single == 1 & true.dir == 1) / sum(true.dir == 1)  # Power:
 
 ## Skeleton
 true.ske    <- LRnetSTv2::skeleton(true.dir)
-adj.bag.ske <- LRnetSTv2::skeleton(adj.bag)
-sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.2417
-sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8349
+adj.single.ske <- LRnetSTv2::skeleton(adj.single)
+sum(adj.single.ske == 1 & true.ske == 0) / sum(adj.single.ske == 1)  # FDR:  
+sum(adj.single.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 
 
 
 # (ii) Bootstrap DAG learning (sequential; use backend = "future" for parallel)
