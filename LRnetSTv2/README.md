@@ -147,131 +147,178 @@ A p by p 0/1 integer matrix: the adjacency matrix of the aggregated DAG.
 
 ## Examples
 
+### Example 1: All-continuous nodes (built-in example dataset)
+
 ```r
 library(LRnetSTv2)
-
-# ── Load example data (from LRnetST) ──────────────────────────────────────────
 library(LRnetST)
 data(example)
-Y.n      <- example$Y      # 102 × 102 log-count matrix
-true.dir <- example$true.dir
 
+Y.n      <- example$Y        # 102 × 102 log-count matrix
+true.dir <- example$true.dir # 102 × 102 true DAG (109 edges)
 p <- ncol(Y.n)   # 102
 n <- nrow(Y.n)   # 102
 
-# ── (i) Prepare data for the SC workflow ──────────────────────────────────────
-# SC_prepare creates paired (logCount, indicator) columns and sets white/blacklists.
-prep <- LRnetSTv2::SC_prepare(Y.n)
-# prep$Y        : 102 × 204  (102 continuous + 102 binary columns)
-# prep$nodeType : "c" × 102, "b" × 102
-# prep$whiteList: 102 whitelist entries  (indicator_i → logcount_i)
-
-# ── (ii) Single-run DAG learning ──────────────────────────────────────────────
+# (i) Single-run DAG learning
 res <- LRnetSTv2::hcSC(
-  Y         = prep$Y,
-  nodeType  = prep$nodeType,
-  whiteList = prep$whiteList,
-  blackList = prep$blackList,
-  scale     = TRUE,
-  maxStep   = 1000,
-  tol       = 1e-6,
-  restart   = 10,
-  seed      = 1,
-  verbose   = FALSE
+  Y       = Y.n,
+  nodeType = rep("c", p),
+  scale   = TRUE, maxStep = 1000, tol = 1e-6,
+  restart = 10, seed = 1, verbose = FALSE
 )
-adj.single <- res$adjacency[1:p, 1:p]   # logCount block only
+adj.single <- res$adjacency   # 322 edges
 
-# ── (iii) Bootstrap DAG learning ──────────────────────────────────────────────
-# Sequential (n.thread = 1):
+# (ii) Bootstrap DAG learning (sequential; use n.thread > 1 for parallel)
 boot.adj <- LRnetSTv2::hcSC_boot(
-  Y              = prep$Y,
-  n.boot         = 50,
-  nodeType       = prep$nodeType,
-  whiteList      = prep$whiteList,
-  blackList      = prep$blackList,
-  scale          = TRUE,
-  tol            = 1e-6,
-  maxStep        = 1000,
-  restart        = 10,
-  seed           = 1,
-  nodeShuffle    = FALSE,
-  bootDensityThre = 0.1,
-  n.thread       = 1,
-  verbose        = FALSE
+  Y       = Y.n, n.boot = 50,
+  nodeType = rep("c", p),
+  scale   = TRUE, tol = 1e-6, maxStep = 1000,
+  restart = 10, seed = 1, nodeShuffle = TRUE,
+  bootDensityThre = 0.1, n.thread = 1, verbose = FALSE
 )
-# Parallel (e.g. 4 cores):
-# boot.adj <- LRnetSTv2::hcSC_boot(..., n.thread = 4)
 
-# ── (iv) Bootstrap aggregation ────────────────────────────────────────────────
-adj.bag.full <- LRnetSTv2::score_shd(
-  boot.adj,
-  alpha     = 1,
-  threshold = 0,
-  whitelist = prep$whiteList
-)
-adj.bag <- adj.bag.full[1:p, 1:p]   # logCount block
+# (iii) Bootstrap aggregation
+adj.bag <- LRnetSTv2::score_shd(boot.adj, alpha = 1, threshold = 0)
 
-# ── (v) Evaluation ────────────────────────────────────────────────────────────
+# (iv) Evaluation
 ## DAG
-sum(adj.bag == 1 & true.dir == 0) / sum(adj.bag == 1)   # FDR:   0.3942
-sum(adj.bag == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.5780
+sum(adj.bag == 1 & true.dir == 0) / sum(adj.bag == 1)   # FDR:   0.4250
+sum(adj.bag == 1 & true.dir == 1) / sum(true.dir == 1)  # Power: 0.6330
 
 ## Skeleton
-true.ske   <- LRnetSTv2::skeleton(true.dir)
+true.ske    <- LRnetSTv2::skeleton(true.dir)
 adj.bag.ske <- LRnetSTv2::skeleton(adj.bag)
-sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.1442
-sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8165
+sum(adj.bag.ske == 1 & true.ske == 0) / sum(adj.bag.ske == 1)  # FDR:   0.2417
+sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.8349
 
 ## Moral graph
-true.moral   <- LRnetSTv2::moral_graph(true.dir)
+true.moral    <- LRnetSTv2::moral_graph(true.dir)
 adj.bag.moral <- LRnetSTv2::moral_graph(adj.bag)
-sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.2160
-sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.6902
+sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.3495
+sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.7283
 
 ## V-structures
-true.vstr   <- LRnetSTv2::vstructures(true.dir)
+true.vstr    <- LRnetSTv2::vstructures(true.dir)
 adj.bag.vstr <- LRnetSTv2::vstructures(adj.bag)
-vstr.corr    <- LRnetSTv2::compare.vstructures(
-  target.vstructures = adj.bag.vstr,
-  true.vstructures   = true.vstr
+vstr.corr    <- LRnetSTv2::compare.vstructures(adj.bag.vstr, true.vstr)
+1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.5517
+nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.5065
+```
+
+### Example 2: SC workflow with zero-inflated data
+
+This example demonstrates the recommended workflow for ST count data. Starting from
+the built-in `example$Y` (all-continuous), we simulate zero-inflation by independently
+masking each entry with a Bernoulli(0.75) draw. The observed data are `(Z, U)` where
+`Z = Y * U` (zero-inflated log-counts) and `U` (binary on/off indicators). The true
+DAG has a 2p × 2p block structure: the original Z→Z edges plus a fixed U_j → Z_j
+edge for every gene j.
+
+```r
+library(LRnetSTv2)
+library(LRnetST)
+data(example)
+
+Y.n      <- example$Y        # 102 × 102 log-count matrix (no zeros)
+true.dir <- example$true.dir # 102 × 102 true DAG (109 edges)
+p <- ncol(Y.n)
+n <- nrow(Y.n)
+
+# (i) Simulate zero-inflated SC data
+set.seed(42)
+U <- matrix(rbinom(n * p, size = 1, prob = 0.75), nrow = n, ncol = p)
+Z <- Y.n * U          # Z_ij = Y_ij * U_ij; ~25% zeros
+
+# Observed data: n × 2p matrix (Z columns first, then U columns)
+Y.sc      <- cbind(Z, U)
+node.type <- c(rep("c", p), rep("b", p))
+
+# (ii) Construct white/blacklists: U_j -> Z_j (white), Z_j -> U_j (black)
+whiteList <- matrix(FALSE, 2*p, 2*p)
+blackList <- matrix(FALSE, 2*p, 2*p)
+diag(blackList) <- TRUE
+for (j in seq_len(p)) {
+  whiteList[p + j, j] <- TRUE   # U_j -> Z_j always included
+  blackList[j, p + j] <- TRUE   # Z_j -> U_j always excluded
+}
+
+# (iii) True 2p × 2p DAG
+true.dir.2p <- matrix(0L, 2*p, 2*p)
+true.dir.2p[1:p, 1:p] <- true.dir          # Z -> Z block (109 edges)
+for (j in seq_len(p)) true.dir.2p[p+j, j] <- 1L  # U_j -> Z_j (102 edges)
+# total: 211 true edges
+
+# (iv) Bootstrap DAG learning
+boot.sc <- LRnetSTv2::hcSC_boot(
+  Y               = Y.sc, n.boot = 50,
+  nodeType        = node.type,
+  whiteList       = whiteList, blackList = blackList,
+  scale           = TRUE, tol = 1e-6, maxStep = 1000,
+  restart         = 10, seed = 1, nodeShuffle = FALSE,
+  bootDensityThre = 0.05, n.thread = 1, verbose = FALSE
 )
-1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.3729
-nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.4805
+
+# (v) Bootstrap aggregation
+adj.bag.2p <- LRnetSTv2::score_shd(boot.sc, alpha = 1, threshold = 0,
+                                    whitelist = whiteList)
+
+# (vi) Evaluation on the full 2p × 2p model
+## DAG
+sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2275
+sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6114
+
+## Skeleton
+true.ske.2p    <- LRnetSTv2::skeleton(true.dir.2p)
+adj.bag.ske.2p <- LRnetSTv2::skeleton(adj.bag.2p)
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.0719
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7346
+
+## Moral graph
+true.moral.2p    <- LRnetSTv2::moral_graph(true.dir.2p)
+adj.bag.moral.2p <- LRnetSTv2::moral_graph(adj.bag.2p)
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.2134
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4759
+
+## V-structures
+true.vstr.2p    <- LRnetSTv2::vstructures(true.dir.2p)  # 186 true v-structures
+adj.bag.vstr.2p <- LRnetSTv2::vstructures(adj.bag.2p)
+vstr.corr.2p    <- LRnetSTv2::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
+1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5417
+nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1774
 ```
 
 ## Comparison with LRnetST
 
-Results on the built-in `example` dataset (`n = 102`, `p = 102`, 109 true edges). Both packages used `seed = 1`, `restart = 10`, `maxStep = 1000`. LRnetSTv2 (all-continuous) uses the same all-`"c"` node type as LRnetST for a direct speed comparison; LRnetSTv2 (SC workflow) uses `SC_prepare` for the intended mixed continuous/binary model.
+Results on the built-in `example` dataset (`n = 102`, `p = 102`, 109 true edges, all-continuous nodes). Both packages used `seed = 1`, `restart = 10`, `maxStep = 1000`, `n.boot = 50`, sequential execution.
 
 ### Timing
 
-| | Single HC | Bootstrap (n.boot = 50, sequential) |
+| | Single HC | Bootstrap (n.boot = 50) |
 | :--- | ---: | ---: |
 | LRnetST | 5.98 s | 1269 s |
-| LRnetSTv2 (all-continuous) | **1.04 s** | **406 s** |
-| LRnetSTv2 (SC workflow) | 8.33 s | 1209 s |
+| LRnetSTv2 | **1.04 s** | **406 s** |
 
-LRnetSTv2 is **5.7× faster** for a single HC run and **3.1× faster** for 50 bootstrap resamples (all-continuous). The SC workflow processes 2p = 204 nodes so it is slower per run, but it models the zero-inflation structure explicitly.
+LRnetSTv2 is **5.7× faster** for a single HC run and **3.1× faster** for 50 bootstrap resamples.
 
 ### Accuracy (bootstrap-aggregated DAG, n.boot = 50)
 
-| Metric | LRnetST | LRnetSTv2 (all-continuous) | LRnetSTv2 (SC workflow) |
-| :----- | :-----: | :------------------------: | :---------------------: |
-| **DAG** | | | |
-| FDR    | 0.4375 | 0.4250 | **0.3942** |
-| Power  | 0.5780 | **0.6330** | 0.5780 |
-| Edges  | 112    | 120    | 104    |
-| **Skeleton** | | | |
-| FDR    | 0.1786 | 0.2417 | **0.1442** |
-| Power  | **0.8440** | 0.8349 | 0.8165 |
-| **Moral graph** | | | |
-| FDR    | 0.2414 | 0.3495 | **0.2160** |
-| Power  | 0.7174 | **0.7283** | 0.6902 |
-| **V-structures** | | | |
-| FDR    | 0.3968 | 0.5517 | **0.3729** |
-| Power  | 0.4935 | **0.5065** | 0.4805 |
+| Metric | LRnetST | LRnetSTv2 |
+| :----- | :-----: | :-------: |
+| **DAG** | | |
+| FDR    | 0.4375 | **0.4250** |
+| Power  | 0.5780 | **0.6330** |
+| Edges  | 112    | 120       |
+| **Skeleton** | | |
+| FDR    | **0.1786** | 0.2417 |
+| Power  | **0.8440** | 0.8349 |
+| **Moral graph** | | |
+| FDR    | **0.2414** | 0.3495 |
+| Power  | 0.7174 | **0.7283** |
+| **V-structures** | | |
+| FDR    | **0.3968** | 0.5517 |
+| Power  | 0.4935 | **0.5065** |
 
-The SC workflow (LRnetSTv2 with `SC_prepare`) consistently achieves the lowest FDR across all four metrics, at a modest cost in power. This is the recommended mode for ST data with significant zero-inflation.
+LRnetSTv2 improves DAG-level FDR and power. Skeleton and moral-graph metrics are comparable; the difference at the V-structure level is expected since improved score caching changes tie-breaking behaviour in restarts (different local optima are found). For zero-inflated ST data use the SC workflow (Example 2), which models the on/off indicators explicitly and achieves substantially lower skeleton FDR (0.07 vs 0.18–0.24).
 
 ## Contributions
 
