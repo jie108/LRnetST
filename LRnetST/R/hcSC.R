@@ -147,30 +147,27 @@ hcSC <- function(Y, nodeType = NULL, whiteList = NULL, blackList = NULL,
 }
 
 
-boot_dense <- function(Y, bootDensityThre) {
-  ## Bootstrap resample of Y (with replacement) rejecting any sample where
-  ## any column falls below bootDensityThre fraction of nonzero entries.
+.boot_dense_idx <- function(Y, bootDensityThre) {
+  ## Returns row indices of a bootstrap resample of Y (with replacement),
+  ## rejecting draws where any column falls below bootDensityThre nonzero rate.
+  ## The caller is responsible for setting the RNG seed before calling this.
   n <- nrow(Y)
   repeat {
-    s.pick <- sample(seq_len(n), n, replace = TRUE)
-    Y.pick <- Y[s.pick, , drop = FALSE]
-    if (!any(apply(Y.pick != 0, 2, mean) < bootDensityThre)) break
+    idx <- sample.int(n, n, replace = TRUE)
+    if (!any(colMeans(Y[idx, , drop = FALSE] != 0) < bootDensityThre))
+      return(idx)
   }
-  Y.pick
 }
 
 .fit_boot_one_SC <- function(b, Y, nodeType, whiteList, blackList,
                               tol, maxStep, restart, hc_seed,
-                              boot_seed, node_perm, scale,
-                              bootDensityThre, verbose) {
+                              boot_index, node_perm, scale, verbose) {
   ## Fit one bootstrap HC replicate.
-  ## boot_seed controls R's RNG for the rejection-sampled bootstrap draw;
-  ## hc_seed controls the C++ mt19937 for HC tie-breaking.
+  ## boot_index: pre-generated row indices (rejection-sampled in the caller).
+  ## hc_seed:    C++ mt19937 seed for HC tie-breaking.
   ## L2 scaling is applied per bootstrap sample after row-resampling so that
-  ## every replicate sees exactly unit-scale data (not approximately, which
-  ## would result from scaling the full dataset once before resampling).
-  set.seed(boot_seed)
-  Y.B <- boot_dense(Y, bootDensityThre)
+  ## every replicate sees exactly unit-scale data.
+  Y.B <- Y[boot_index, , drop = FALSE]
 
   if (scale) {
     n.B <- nrow(Y.B)
@@ -250,8 +247,12 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
     }
   }, add = TRUE)
 
-  ## Generate all per-replicate randomness upfront from one seed so that
-  ## sequential and future backends visit the same bootstrap problems.
+  ## Generate all per-replicate randomness upfront from a single seed so that
+  ## sequential and future backends visit identical bootstrap problems.
+  ##
+  ## bootstrap indices are generated in the main process (not workers) so that
+  ## workers need no R RNG at all — removing the seed = TRUE vs set.seed()
+  ## conflict that caused sequential and future to diverge.
   set.seed(args$seed)
   boot_seeds <- sample.int(.Machine$integer.max, n.boot)
   hc_seeds   <- sample.int(.Machine$integer.max, n.boot)
@@ -261,12 +262,21 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
     NULL
   }
 
+  ## Pre-generate bootstrap row indices using each boot_seed so the indices
+  ## are bit-identical to what set.seed(boot_seeds[b]) + rejection sampling
+  ## would produce in a sequential worker.
+  n <- nrow(args$Y)
+  boot_indices <- lapply(seq_len(n.boot), function(b) {
+    set.seed(boot_seeds[b])
+    .boot_dense_idx(args$Y, bootDensityThre)
+  })
+
   run_one <- function(b) {
     if (verbose) message("Processing bootstrap sample ", b)
     node_perm <- if (!is.null(node_permutations)) node_permutations[[b]] else NULL
     .fit_boot_one_SC(b, args$Y, args$nodeType, args$whiteList, args$blackList,
                      tol, args$maxStep, args$restart, hc_seeds[b],
-                     boot_seeds[b], node_perm, scale, bootDensityThre, verbose)
+                     boot_indices[[b]], node_perm, scale, verbose)
   }
 
   if (backend == "sequential") {
@@ -280,7 +290,7 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
     on.exit(future::plan(old_plan), add = TRUE)
     future::plan(future::multisession, workers = nw)
     futures <- lapply(seq_len(n.boot), function(b) {
-      future::future(run_one(b), seed = TRUE)
+      future::future(run_one(b), seed = FALSE)
     })
     result <- lapply(futures, future::value)
   }
