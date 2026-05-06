@@ -332,6 +332,19 @@ adj.bag.ske.2p <- LRnetST::skeleton(adj.bag.2p)
 sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.08235294
 sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7393365
 
+# (vii) Evaluation on the first p × p block (continuous nodes Z only)
+adj.bag.Z <- adj.bag.2p[1:p, 1:p]
+
+## DAG
+sum(adj.bag.Z == 1 & true.dir == 0) / sum(adj.bag.Z == 1)
+sum(adj.bag.Z == 1 & true.dir == 1) / sum(true.dir == 1)
+
+## Skeleton
+true.ske.Z    <- LRnetST::skeleton(true.dir)
+adj.bag.ske.Z <- LRnetST::skeleton(adj.bag.Z)
+sum(adj.bag.ske.Z == 1 & true.ske.Z == 0) / sum(adj.bag.ske.Z == 1)
+sum(adj.bag.ske.Z == 1 & true.ske.Z == 1) / sum(true.ske.Z == 1)
+
 ## Moral graph
 true.moral.2p    <- LRnetST::moral_graph(true.dir.2p)
 adj.bag.moral.2p <- LRnetST::moral_graph(adj.bag.2p)
