@@ -251,15 +251,15 @@ sum(adj.bag.ske == 1 & true.ske == 1) / sum(true.ske == 1)     # Power: 0.825688
 ## Moral graph
 true.moral    <- LRnetST::moral_graph(true.dir)
 adj.bag.moral <- LRnetST::moral_graph(adj.bag)
-sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.1666667
-sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.7065217
+sum(adj.bag.moral == 1 & true.moral == 0) / sum(adj.bag.moral == 1)  # FDR:   0.1830065
+sum(adj.bag.moral == 1 & true.moral == 1) / sum(true.moral == 1)     # Power: 0.6793478
 
 ## V-structures
 true.vstr    <- LRnetST::vstructures(true.dir)
 adj.bag.vstr <- LRnetST::vstructures(adj.bag)
 vstr.corr    <- LRnetST::compare.vstructures(adj.bag.vstr, true.vstr)
-1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.3076923
-nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.4675325
+1 - nrow(vstr.corr) / nrow(adj.bag.vstr)  # FDR:   0.36
+nrow(vstr.corr) / nrow(true.vstr)          # Power: 0.4155844
 ```
 
 ### Example 2: SC workflow with zero-inflated data
@@ -324,40 +324,40 @@ adj.bag.2p <- LRnetST::score_shd_freq(boot.sc.freq, alpha = 1, freq.cutoff = 0.5
 
 # (vi) Evaluation on the full 2p × 2p model
 ## DAG
-sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2470588
-sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6066351
+sum(adj.bag.2p == 1 & true.dir.2p == 0) / sum(adj.bag.2p == 1)   # FDR:   0.2427746
+sum(adj.bag.2p == 1 & true.dir.2p == 1) / sum(true.dir.2p == 1)  # Power: 0.6208531
 
 ## Skeleton
 true.ske.2p    <- LRnetST::skeleton(true.dir.2p)
 adj.bag.ske.2p <- LRnetST::skeleton(adj.bag.2p)
-sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.08235294
-sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7393365
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 0) / sum(adj.bag.ske.2p == 1)  # FDR:   0.09248555
+sum(adj.bag.ske.2p == 1 & true.ske.2p == 1) / sum(true.ske.2p == 1)     # Power: 0.7440758
 
 ## Moral graph
 true.moral.2p    <- LRnetST::moral_graph(true.dir.2p)
 adj.bag.moral.2p <- LRnetST::moral_graph(adj.bag.2p)
-sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.2336066
-sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4734177
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 0) / sum(adj.bag.moral.2p == 1)  # FDR:   0.236
+sum(adj.bag.moral.2p == 1 & true.moral.2p == 1) / sum(true.moral.2p == 1)     # Power: 0.4835443
 
 ## V-structures
 true.vstr.2p    <- LRnetST::vstructures(true.dir.2p)  # 186 true v-structures
 adj.bag.vstr.2p <- LRnetST::vstructures(adj.bag.2p)
 vstr.corr.2p    <- LRnetST::compare.vstructures(adj.bag.vstr.2p, true.vstr.2p)
-1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5945946
-nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1612903
+1 - nrow(vstr.corr.2p) / nrow(adj.bag.vstr.2p)  # FDR:   0.5584416
+nrow(vstr.corr.2p) / nrow(true.vstr.2p)          # Power: 0.1827957
 
 # (vii) Evaluation on the first p × p block (continuous nodes Z only)
 adj.bag.Z <- adj.bag.2p[1:p, 1:p]
 
 ## DAG
-sum(adj.bag.Z == 1 & true.dir == 0) / sum(adj.bag.Z == 1) ## FDR: 0.559322
-sum(adj.bag.Z == 1 & true.dir == 1) / sum(true.dir == 1) ## Power: 0.2385321
+sum(adj.bag.Z == 1 & true.dir == 0) / sum(adj.bag.Z == 1) ## FDR: 0.5084746
+sum(adj.bag.Z == 1 & true.dir == 1) / sum(true.dir == 1) ## Power: 0.266055
 
 ## Skeleton
 true.ske.Z    <- LRnetST::skeleton(true.dir)
 adj.bag.ske.Z <- LRnetST::skeleton(adj.bag.Z)
-sum(adj.bag.ske.Z == 1 & true.ske.Z == 0) / sum(adj.bag.ske.Z == 1) ## FDR: 0.08474576
-sum(adj.bag.ske.Z == 1 & true.ske.Z == 1) / sum(true.ske.Z == 1) ## Power: 0.4954128
+sum(adj.bag.ske.Z == 1 & true.ske.Z == 0) / sum(adj.bag.ske.Z == 1) ## FDR: 0.06779661
+sum(adj.bag.ske.Z == 1 & true.ske.Z == 1) / sum(true.ske.Z == 1) ## Power: 0.5045872
 
 ```
 

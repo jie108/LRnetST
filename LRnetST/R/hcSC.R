@@ -290,7 +290,7 @@ hcSC_boot <- function(Y, n.boot = 100L, nodeType = NULL,
     on.exit(future::plan(old_plan), add = TRUE)
     future::plan(future::multisession, workers = nw)
     futures <- lapply(seq_len(n.boot), function(b) {
-      future::future(run_one(b), seed = FALSE)
+      future::future(run_one(b), seed = NULL)
     })
     result <- lapply(futures, future::value)
   }
