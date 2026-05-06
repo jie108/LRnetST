@@ -306,19 +306,19 @@ for (j in seq_len(p)) true.dir.2p[p+j, j] <- 1L  # U_j -> Z_j (102 edges)
 # total: 211 true edges
 
 # (iv) Bootstrap DAG learning
-boot.sc <- LRnetST::hcSC_boot(
+boot.sc.freq <- LRnetST::hcSC_boot(
   Y               = Y.sc, n.boot = 100,
   nodeType        = node.type,
   whiteList       = whiteList, blackList = blackList,
   scale           = TRUE, tol = 1e-6, maxStep = 1000,
   restart         = 1, seed = 1, nodeShuffle = TRUE,
   bootDensityThre = 0.05, 
-  output_type = "array",
+  output_type = "freq",
   backend = "future", workers = 5, verbose = FALSE
 )
 
 # (v) Bootstrap aggregation
-adj.bag.2p <- LRnetST::score_shd(boot.sc, alpha = 1, freq.cutoff = 0.5,
+adj.bag.2p <- LRnetST::score_shd_freq(boot.sc.freq, alpha = 1, freq.cutoff = 0.5,
                                     whiteList = whiteList, blackList=blackList)
 
 # (vi) Evaluation on the full 2p × 2p model
