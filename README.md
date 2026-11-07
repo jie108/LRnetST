@@ -363,4 +363,4 @@ sum(adj.bag.ske.Z == 1 & true.ske.Z == 1) / sum(true.ske.Z == 1) ## Power: 0.504
 
 ## Contributions
 
-If you find bugs or have suggestions, please email the maintainer at <jiepeng108@gmail.com>. Contributions (via pull requests or otherwise) are welcome.
+If you find bugs or have suggestions, please let us know. Contributions (via pull requests or otherwise) are welcome.
